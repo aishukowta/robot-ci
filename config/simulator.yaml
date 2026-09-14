@@ -1,0 +1,25 @@
+# =============================================================================
+# Robot CI — Mock Simulator Configuration
+# =============================================================================
+#
+# Default parameters for the lightweight development simulator.
+# Per-scenario environment_params override these defaults.
+#
+# NOTE: This is NOT a realistic physics simulator.
+# It validates the Robot CI software architecture before later Isaac Sim
+# integration.
+# =============================================================================
+
+defaults:
+  max_step_size: 0.05
+  noise_std: 0.002
+  friction: 0.98
+  workspace_bounds:
+    min: [-0.1, -0.5, 0.0]
+    max: [1.0, 0.5, 0.8]
+  grasp_threshold: 0.05
+  action_clip: 0.1
+  collision_penalty: -1.0
+  success_reward: 10.0
+  step_penalty: -0.01
+  distance_reward_scale: 1.0

@@ -1,0 +1,37 @@
+# =============================================================================
+# Scenario: pick_and_place_medium
+# Pick and place with one obstacle. Tighter tolerances. Fewer steps.
+# =============================================================================
+
+scenario_id: pick_and_place_medium
+task_name: pick_and_place
+
+initial_state:
+  ee_position: [0.3, 0.0, 0.4]
+  gripper_open: true
+  object_position: [0.45, 0.15, 0.15]
+
+target_state:
+  position: [0.55, -0.2, 0.15]
+
+environment_params:
+  workspace_bounds: [[-0.1, -0.5, 0.0], [1.0, 0.5, 0.8]]
+  obstacles:
+    - center: [0.45, -0.05, 0.15]
+      half_extents: [0.04, 0.04, 0.15]
+  noise_std: 0.003
+  friction: 0.96
+  max_step_size: 0.05
+  grasp_threshold: 0.05
+
+max_episode_steps: 250
+
+success_criteria:
+  distance_threshold: 0.05
+
+safety_criteria:
+  collision_zones:
+    - center: [0.45, -0.05, 0.15]
+      half_extents: [0.04, 0.04, 0.15]
+
+seed: 45

@@ -1,0 +1,31 @@
+# =============================================================================
+# Scenario: reach_diagonal
+# Longer diagonal reach with tighter success threshold and more noise.
+# =============================================================================
+
+scenario_id: reach_diagonal
+task_name: reach
+
+initial_state:
+  ee_position: [0.2, -0.1, 0.2]
+  gripper_open: true
+
+target_state:
+  position: [0.6, 0.3, 0.5]
+
+environment_params:
+  workspace_bounds: [[-0.1, -0.5, 0.0], [1.0, 0.5, 0.8]]
+  obstacles: []
+  noise_std: 0.003
+  friction: 0.96
+  max_step_size: 0.05
+
+max_episode_steps: 200
+
+success_criteria:
+  distance_threshold: 0.03
+
+safety_criteria:
+  collision_zones: []
+
+seed: 43

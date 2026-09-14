@@ -1,0 +1,69 @@
+# =============================================================================
+# Robot CI — Regression Detection Thresholds
+# =============================================================================
+#
+# Each metric defines:
+#   threshold:  value that triggers regression detection
+#   direction:  "decrease" = regression when candidate < baseline
+#               "increase" = regression when candidate > baseline
+#   comparison: "absolute" = raw value difference
+#               "relative" = percentage-based (delta / baseline)
+#   severity_levels: thresholds for minor / major / critical severity
+#
+# These thresholds are loaded by RegressionDetector.
+# Adjust as needed for your evaluation requirements.
+# =============================================================================
+
+success_rate:
+  threshold: 0.10
+  direction: decrease
+  comparison: absolute
+  severity_levels:
+    minor: 0.10
+    major: 0.25
+    critical: 0.50
+
+completion_time:
+  threshold: 0.20
+  direction: increase
+  comparison: relative
+  severity_levels:
+    minor: 0.20
+    major: 0.50
+    critical: 1.00
+
+trajectory_deviation:
+  threshold: 0.05
+  direction: monitor
+  comparison: absolute
+  severity_levels:
+    minor: 0.05
+    major: 0.15
+    critical: 0.30
+
+collision_count:
+  threshold: 1.0
+  direction: increase
+  comparison: absolute
+  severity_levels:
+    minor: 1.0
+    major: 3.0
+    critical: 5.0
+
+action_difference:
+  threshold: 0.03
+  direction: monitor
+  comparison: absolute
+  severity_levels:
+    minor: 0.03
+    major: 0.08
+    critical: 0.15
+
+reward_difference:
+  threshold: 0.10
+  direction: decrease
+  comparison: relative
+  severity_levels:
+    minor: 0.10
+    major: 0.30
+    critical: 0.50

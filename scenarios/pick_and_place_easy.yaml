@@ -1,0 +1,34 @@
+# =============================================================================
+# Scenario: pick_and_place_easy
+# Reach an object, grasp it, carry to target position.
+# No obstacles. Generous tolerances. Many steps allowed.
+# =============================================================================
+
+scenario_id: pick_and_place_easy
+task_name: pick_and_place
+
+initial_state:
+  ee_position: [0.3, 0.0, 0.4]
+  gripper_open: true
+  object_position: [0.4, 0.1, 0.2]
+
+target_state:
+  position: [0.5, -0.1, 0.2]
+
+environment_params:
+  workspace_bounds: [[-0.1, -0.5, 0.0], [1.0, 0.5, 0.8]]
+  obstacles: []
+  noise_std: 0.002
+  friction: 0.98
+  max_step_size: 0.05
+  grasp_threshold: 0.06
+
+max_episode_steps: 300
+
+success_criteria:
+  distance_threshold: 0.08
+
+safety_criteria:
+  collision_zones: []
+
+seed: 44

@@ -1,0 +1,32 @@
+# =============================================================================
+# Scenario: reach_simple
+# Move end-effector from start to a nearby target position.
+# No obstacles. Generous success threshold.
+# =============================================================================
+
+scenario_id: reach_simple
+task_name: reach
+
+initial_state:
+  ee_position: [0.3, 0.0, 0.3]
+  gripper_open: true
+
+target_state:
+  position: [0.5, 0.2, 0.3]
+
+environment_params:
+  workspace_bounds: [[-0.1, -0.5, 0.0], [1.0, 0.5, 0.8]]
+  obstacles: []
+  noise_std: 0.002
+  friction: 0.98
+  max_step_size: 0.05
+
+max_episode_steps: 200
+
+success_criteria:
+  distance_threshold: 0.05
+
+safety_criteria:
+  collision_zones: []
+
+seed: 42

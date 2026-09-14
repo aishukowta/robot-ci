@@ -1,0 +1,42 @@
+# =============================================================================
+# Scenario: pick_and_place_hard
+# Pick and place with two obstacles. Tight tolerances. Fewer steps.
+# Higher noise, lower friction.
+# =============================================================================
+
+scenario_id: pick_and_place_hard
+task_name: pick_and_place
+
+initial_state:
+  ee_position: [0.25, -0.05, 0.45]
+  gripper_open: true
+  object_position: [0.5, 0.2, 0.1]
+
+target_state:
+  position: [0.6, -0.25, 0.1]
+
+environment_params:
+  workspace_bounds: [[-0.1, -0.5, 0.0], [1.0, 0.5, 0.8]]
+  obstacles:
+    - center: [0.4, 0.1, 0.1]
+      half_extents: [0.03, 0.03, 0.1]
+    - center: [0.55, -0.1, 0.1]
+      half_extents: [0.03, 0.03, 0.1]
+  noise_std: 0.005
+  friction: 0.94
+  max_step_size: 0.04
+  grasp_threshold: 0.04
+
+max_episode_steps: 200
+
+success_criteria:
+  distance_threshold: 0.03
+
+safety_criteria:
+  collision_zones:
+    - center: [0.4, 0.1, 0.1]
+      half_extents: [0.03, 0.03, 0.1]
+    - center: [0.55, -0.1, 0.1]
+      half_extents: [0.03, 0.03, 0.1]
+
+seed: 46
