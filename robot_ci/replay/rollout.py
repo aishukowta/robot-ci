@@ -48,6 +48,34 @@ class Rollout:
             states=data["states"],
             rewards=data["rewards"],
             success=data["success"],
-            collision_count=data["collision_count"],
+            collision_count=data.get("collision_count", 0),
             total_steps=data["total_steps"],
         )
+
+    def get_telemetry_dataframe(self, target_position: List[float] = None) -> Any:
+        import pandas as pd
+
+        steps = list(range(len(self.actions)))
+        rewards = [float(r) for r in self.rewards]
+        ee_x = [float(obs[0]) for obs in self.observations[1:]]
+        ee_y = [float(obs[1]) for obs in self.observations[1:]]
+        ee_z = [float(obs[2]) for obs in self.observations[1:]]
+
+        if target_position is not None:
+            target = np.array(target_position, dtype=np.float32)
+            dists = [float(np.linalg.norm(obs[0:3] - target)) for obs in self.observations[1:]]
+        else:
+            dists = [float(np.linalg.norm(obs[0:3] - obs[7:10])) for obs in self.observations[1:]]
+
+        act_mags = [float(np.linalg.norm(act[0:3])) for act in self.actions]
+
+        return pd.DataFrame({
+            "Step": steps,
+            "Reward": rewards,
+            "EE_X": ee_x,
+            "EE_Y": ee_y,
+            "EE_Z": ee_z,
+            "Distance_to_Target": dists,
+            "Action_Magnitude": act_mags,
+        })
+

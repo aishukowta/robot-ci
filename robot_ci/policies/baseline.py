@@ -83,12 +83,13 @@ class BaselinePolicy(PolicyInterface):
                 waypoint = obj_pos.astype(np.float32)
                 gripper_cmd = 0.0
         elif has_object and gripper_state <= 0.5:
-            carry_z = float(max(target_pos[2] + self.lift_height, ee_pos[2]))
+            target_carry_z = float(target_pos[2] + self.lift_height)
             xy_error = np.linalg.norm(ee_pos[0:2] - target_pos[0:2])
-            if self.lift_height > 0.0 and ee_pos[2] < carry_z - 0.03:
-                waypoint = np.array([ee_pos[0], ee_pos[1], carry_z], dtype=np.float32)
-            elif self.lift_height > 0.0 and xy_error > 0.035:
-                waypoint = np.array([target_pos[0], target_pos[1], carry_z], dtype=np.float32)
+            if self.lift_height > 0.0 and xy_error > 0.035:
+                if ee_pos[2] < target_carry_z - 0.03:
+                    waypoint = np.array([ee_pos[0], ee_pos[1], target_carry_z], dtype=np.float32)
+                else:
+                    waypoint = np.array([target_pos[0], target_pos[1], target_carry_z], dtype=np.float32)
             else:
                 waypoint = target_pos.astype(np.float32)
             gripper_cmd = 0.0
