@@ -28,8 +28,8 @@ def main():
     
     # 'demo' subcommand
     demo_parser = subparsers.add_parser("demo", help="Launch a visual PyBullet rollout")
-    demo_parser.add_argument("--policy", default="candidate", help="Policy name to demo (default: candidate)")
-    demo_parser.add_argument("--scenario", default="pick_and_place_medium", help="Scenario id to demo")
+    demo_parser.add_argument("--policy", default="baseline", help="Policy name to demo (default: baseline)")
+    demo_parser.add_argument("--scenario", default="reach_simple", help="Scenario id to demo (default: reach_simple)")
     demo_parser.add_argument("--scenarios", default="scenarios", help="Path to scenarios directory (default: scenarios)")
     demo_parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
 

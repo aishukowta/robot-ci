@@ -26,4 +26,5 @@ def run_demo(policy_name: str, scenario_id: str, scenarios_dir: str, seed: int =
         f"success={rollout.success}, steps={rollout.total_steps}, "
         f"collisions={rollout.collision_count}, reward={sum(rollout.rewards):.3f}"
     )
+    print("This GUI rollout uses PyBullet. The CI pipeline uses the same backend with GUI disabled.")
     return rollout.success

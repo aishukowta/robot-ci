@@ -34,7 +34,8 @@ Policy → Scenario Corpus → Replay → Behavioural Evaluation → Regression 
 |--------|--------|-------------|
 | Policy Manager | ✅ | PyTorch policy interface with baseline and candidate policies |
 | Scenario / Test Manager | ✅ | YAML-based reusable test corpus (5 scenarios) |
-| Mock Simulator | ✅ | Lightweight 3D kinematics simulator for development |
+| Mock Simulator | ✅ | Lightweight 3D kinematics simulator for fast unit tests |
+| PyBullet Simulator | ✅ | Local physics backend (Franka Panda) for real rollouts and the visible demo |
 | Replay Engine | ✅ | Automated rollout execution with deterministic seeds |
 | Evaluation Engine | ✅ | 6 behavioural metrics computed from actual rollout data |
 | Regression Detector | ✅ | Configurable threshold-based regression detection |
@@ -50,7 +51,7 @@ Policy → Scenario Corpus → Replay → Behavioural Evaluation → Regression 
 | 3 | Sim-to-Real Analyzer | ⏳ |
 | 4 | Confidence / Reliability Engine | ⏳ |
 | 5 | Deployment Decision + Dashboard polish | ⏳ |
-| 6 | Isaac Sim integration | ⏳ |
+| 6 | High-fidelity sim (Isaac Sim where GPU hardware exists) | ⏳ |
 | 7 | GitHub Actions + Docker CI | ⏳ |
 | 8 | ROS 2 / MoveIt 2 integration | ⏳ |
 | 9 | 6-DOF physical arm validation | ⏳ |
@@ -63,8 +64,8 @@ Policy → Scenario Corpus → Replay → Behavioural Evaluation → Regression 
 ┌──────────────────────────────────────────────────────┐
 │                    Robot CI Pipeline                  │
 ├──────────────┬───────────────┬───────────────────────┤
-│ Policy       │ Scenario      │ Mock Simulator         │
-│ Manager      │ Manager       │ (future: Isaac Sim)    │
+│ Policy       │ Scenario      │ Mock + PyBullet        │
+│ Manager      │ Manager       │ (local physics)        │
 ├──────────────┴───────────────┴───────────────────────┤
 │                  Replay Engine                        │
 ├──────────────────────────────────────────────────────┤
@@ -93,8 +94,8 @@ Policy → Scenario Corpus → Replay → Behavioural Evaluation → Regression 
 ### Policy Manager (`robot_ci/policies/`)
 
 - **PolicyInterface** — Abstract base class defining the standard policy API
-- **BaselinePolicy** — PyTorch MLP with hand-initialized weights for proportional control
-- **CandidatePolicy** — Same architecture with intentionally degraded weights (noise injection)
+- **BaselinePolicy** — Proportional controller with a small PyTorch residual and lift waypoints for pick-and-place
+- **CandidatePolicy** — Same controller family with realistic degradation (lower gain, action noise, no lift, tighter grasp)
 - **Registry** — Name-based policy loading (`get_policy("baseline")`)
 
 ### Scenario / Test Manager (`robot_ci/scenarios/`)
@@ -102,12 +103,17 @@ Policy → Scenario Corpus → Replay → Behavioural Evaluation → Regression 
 - **Scenario** — Dataclass defining test case: initial state, target, environment, criteria
 - **ScenarioManager** — Loads and validates YAML scenario files
 
-### Mock Simulator (`robot_ci/simulation/`)
+### Simulation (`robot_ci/simulation/`)
 
-- **SimulatorBackend** — Abstract interface (future Isaac Sim will implement this)
-- **MockSimulator** — Lightweight 3D kinematics with collision detection, grasping, reward
+- **SimulatorBackend** — Abstract interface shared by every backend
+- **MockSimulator** — Lightweight 3D kinematics for fast unit tests
+- **PyBulletSimulator** — Local physics backend used by the CI pipeline and the visible demo
 
-> **Note**: The mock simulator is a development tool. It does NOT simulate realistic robot physics. It validates the Robot CI software architecture before later Isaac Sim integration.
+The default pipeline backend is **PyBullet** (DIRECT / headless). The mock backend remains available via `--simulator mock`.
+
+This laptop does not have an NVIDIA GPU, so NVIDIA Isaac Sim / Isaac Lab is not used locally. PyBullet is the actual robotics simulation backend for this project.
+
+Pick-and-place cubes are kinematic until grasped so the existing scenario YAML positions remain stable; after a grasp the cube is attached to the end-effector. That is an explicit mapping from mock-style scenario semantics onto PyBullet, not a deleted scenario corpus.
 
 ### Replay Engine (`robot_ci/replay/`)
 
@@ -161,26 +167,29 @@ pip install -e ".[dev]"
 - NumPy ≥ 1.24
 - Pandas ≥ 2.0
 - PyYAML ≥ 6.0
+- PyBullet ≥ 3.2.7
 - Streamlit ≥ 1.24
 - Matplotlib ≥ 3.7
 - pytest ≥ 7.0 (dev)
+
+Use the project virtual environment (Python 3.11). Do not switch Python versions for this machine. PyBullet should already be installed; do not reinstall it unless it is missing.
 
 ---
 
 ## How to Run the Pipeline
 
+Headless CI (no GUI). Default simulator is PyBullet:
+
 ```bash
-# Run the full regression testing pipeline
 python -m robot_ci run --baseline baseline --candidate candidate --scenarios scenarios/
 
-# With custom options
-python -m robot_ci run \
-    --baseline baseline \
-    --candidate candidate \
-    --scenarios scenarios/ \
-    --seed 42 \
-    --results-dir results/ \
-    --config-dir config/
+python -m robot_ci run --baseline baseline --candidate candidate --scenarios scenarios/ --simulator pybullet --seed 42 --results-dir results/ --config-dir config/
+```
+
+Fast mock backend (unit-test style, no robot mesh):
+
+```bash
+python -m robot_ci run --baseline baseline --candidate candidate --scenarios scenarios/ --simulator mock
 ```
 
 The pipeline will:
@@ -228,6 +237,27 @@ python -m robot_ci dashboard
 streamlit run dashboard/app.py
 ```
 
+## Visible PyBullet Demo
+
+These commands open the PyBullet GUI and execute one policy on one scenario. Use this for a panel demonstration.
+
+From the project root, with the `.venv` environment active:
+
+```bash
+python -m robot_ci demo --policy baseline --scenario reach_simple
+python -m robot_ci demo --policy candidate --scenario reach_simple
+python -m robot_ci demo --policy baseline --scenario pick_and_place_easy
+python -m robot_ci demo --policy candidate --scenario pick_and_place_medium
+```
+
+Defaults are `baseline` and `reach_simple`. The demo uses `PyBulletSimulator(gui=True)`. Automated tests and `python -m robot_ci run` keep `gui=False`.
+
+After a pipeline run, launch the dashboard on the saved JSON:
+
+```bash
+python -m robot_ci dashboard
+```
+
 The dashboard reads actual stored JSON results and displays:
 - Metric comparison bar charts
 - Regression findings table with severity
@@ -244,7 +274,7 @@ Running the pipeline with the built-in baseline and candidate policies:
 python -m robot_ci run --baseline baseline --candidate candidate --scenarios scenarios/
 ```
 
-**Expected behaviour**: The candidate policy has intentionally degraded weights (noise injection), which produces:
+**Expected behaviour**: Metrics come from recorded PyBullet (or mock) rollouts. The candidate is a realistically degraded controller, which typically produces:
 - Lower success rate
 - Longer completion times
 - Greater trajectory deviation
@@ -283,7 +313,9 @@ robot-ci/
 │   │
 │   ├── simulation/                    # Simulation Backend
 │   │   ├── backend.py                # SimulatorBackend ABC
-│   │   └── mock.py                   # MockSimulator
+│   │   ├── mock.py                   # MockSimulator
+│   │   └── pybullet_sim.py           # PyBullet / Franka Panda backend
+│   ├── demo.py                       # Visible GUI rollout helper
 │   │
 │   ├── replay/                        # Replay Engine
 │   │   ├── rollout.py                # Rollout data model
@@ -338,13 +370,13 @@ robot-ci/
 
 ## Current Limitations
 
-1. **Mock simulator only** — No realistic physics. The simulator validates the software architecture; Isaac Sim integration is planned for Milestone 6.
+1. **Local physics is PyBullet, not Isaac Sim** — There is no NVIDIA GPU on this development laptop, so Isaac Sim / Isaac Lab cannot run here. PyBullet with the bundled Franka Panda URDF is the local robotics backend. MockSimulator is kept for fast tests.
 2. **No sim-to-real analysis** — The sim-to-real gap measurement (Wasserstein, KL, JS divergence) is deferred to Milestone 3.
 3. **No confidence scoring** — The reliability/confidence engine is deferred to Milestone 4.
 4. **No deployment decision** — The Promote/Investigate/Reject logic is deferred to Milestone 5.
 5. **No physical hardware** — 6-DOF arm validation is deferred to Milestone 9.
 6. **Single seed per scenario** — One deterministic seed per scenario. Multiple seeds for statistical robustness planned for Milestone 2.
-7. **Simple policies** — The baseline and candidate are simple PyTorch MLPs, not state-of-the-art manipulation policies.
+7. **Simple policies** — Baseline and candidate are scripted proportional controllers with a small PyTorch residual, not large learned manipulation policies. Grasping in PyBullet is a kinematic attach once the end-effector is within the scenario grasp threshold (Panda fingers are actuated for visibility).
 8. **No CI/CD** — GitHub Actions and Docker deployment are deferred to Milestone 7.
 9. **No ROS 2 / MoveIt 2** — Robot communication and motion planning integration deferred to Milestone 8.
 
@@ -357,7 +389,7 @@ The complete Robot CI vision extends this foundation with:
 - **Sim-to-Real Analyzer**: Compare simulation and real-world distributions using Wasserstein distance, KL divergence, or Jensen-Shannon divergence
 - **Confidence / Decision Engine**: Assess failure reliability by combining regression evidence with sim-to-real gap
 - **Deployment Decision**: Automated Promote / Investigate / Reject recommendations
-- **Isaac Sim**: High-fidelity physics simulation for policy testing
+- **High-fidelity sim**: Isaac Sim where NVIDIA GPU hardware is available; PyBullet remains the supported local backend
 - **GitHub Actions + Docker**: Automated CI execution on policy push
 - **ROS 2 + MoveIt 2**: Real robot communication and motion planning
 - **6-DOF Arm Validation**: Physical hardware testing of selected scenarios

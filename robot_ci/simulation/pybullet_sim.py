@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
@@ -12,9 +12,15 @@ class PyBulletSimulator(SimulatorBackend):
 
     The backend keeps the project's 10D observation and 4D delta-action
     contract while replacing the development kinematics mock with a local
-    physics scene: a KUKA arm, optional cube object, target marker, and
-    scenario-defined obstacle boxes.
+    physics scene: a Franka Panda arm, optional cube object, target marker,
+    table, and scenario-defined obstacle boxes.
+
+    Pick-and-place objects are kinematic until grasped so scenario YAML
+    positions stay stable (the same semantics as MockSimulator). After a
+    grasp, the cube is attached to the end-effector.
     """
+
+    _PANDA_REST = [0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785]
 
     def __init__(self, gui: bool = False, action_repeat: int = 12, sleep_gui: bool = True):
         self.gui = gui
@@ -29,9 +35,14 @@ class PyBulletSimulator(SimulatorBackend):
         self.robot_id = None
         self.object_id = None
         self.target_id = None
-        self.obstacle_ids = []
-        self.ee_link_index = 6
+        self.table_id = None
+        self.obstacle_ids: List[int] = []
+        self.ee_link_index = 11
         self.joint_indices = list(range(7))
+        self.finger_indices = [9, 10]
+        self._lower_limits = list(self._PANDA_REST)
+        self._upper_limits = list(self._PANDA_REST)
+        self._joint_ranges = [2.0] * 7
 
         self.ee_position = np.zeros(3, dtype=np.float32)
         self.gripper_open = True
@@ -68,15 +79,21 @@ class PyBulletSimulator(SimulatorBackend):
         self._client_id = self._p.connect(mode)
         self._p.setAdditionalSearchPath(self._pybullet_data.getDataPath(), physicsClientId=self._client_id)
         self._p.setGravity(0, 0, -9.81, physicsClientId=self._client_id)
-        self._p.setTimeStep(1.0 / 120.0, physicsClientId=self._client_id)
+        self._p.setTimeStep(1.0 / 240.0, physicsClientId=self._client_id)
+        self._p.setPhysicsEngineParameter(
+            numSolverIterations=50,
+            deterministicOverlappingPairs=1,
+            physicsClientId=self._client_id,
+        )
         if self.gui:
             self._p.resetDebugVisualizerCamera(
-                cameraDistance=1.25,
-                cameraYaw=45,
-                cameraPitch=-35,
-                cameraTargetPosition=[0.45, 0.0, 0.25],
+                cameraDistance=1.45,
+                cameraYaw=50,
+                cameraPitch=-32,
+                cameraTargetPosition=[0.45, 0.0, 0.28],
                 physicsClientId=self._client_id,
             )
+            self._p.configureDebugVisualizer(self._p.COV_ENABLE_SHADOWS, 1, physicsClientId=self._client_id)
 
     def seed(self, seed_value: int) -> None:
         self._rng = np.random.default_rng(seed_value)
@@ -86,15 +103,29 @@ class PyBulletSimulator(SimulatorBackend):
         self._scenario = scenario
         self._p.resetSimulation(physicsClientId=self._client_id)
         self._p.setGravity(0, 0, -9.81, physicsClientId=self._client_id)
-        self._p.setTimeStep(1.0 / 120.0, physicsClientId=self._client_id)
-
-        self._p.loadURDF("plane.urdf", physicsClientId=self._client_id)
-        self.robot_id = self._p.loadURDF(
-            "kuka_iiwa/model.urdf",
-            basePosition=[0.0, 0.0, 0.0],
-            useFixedBase=True,
+        self._p.setTimeStep(1.0 / 240.0, physicsClientId=self._client_id)
+        self._p.setPhysicsEngineParameter(
+            numSolverIterations=50,
+            deterministicOverlappingPairs=1,
             physicsClientId=self._client_id,
         )
+
+        self._p.loadURDF("plane.urdf", physicsClientId=self._client_id)
+        self.table_id = self._create_box(
+            half_extents=[0.45, 0.40, 0.02],
+            position=[0.50, 0.0, 0.02],
+            color=[0.55, 0.42, 0.28, 1.0],
+            mass=0.0,
+        )
+        self.robot_id = self._p.loadURDF(
+            "franka_panda/panda.urdf",
+            basePosition=[0.0, 0.0, 0.0],
+            useFixedBase=True,
+            flags=self._p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS,
+            physicsClientId=self._client_id,
+        )
+        self._cache_joint_limits()
+        self._reset_arm_home()
 
         self.ee_position = np.array(scenario.initial_state["ee_position"], dtype=np.float32)
         self.gripper_open = scenario.initial_state.get("gripper_open", True)
@@ -107,6 +138,7 @@ class PyBulletSimulator(SimulatorBackend):
         self._success = False
 
         self._reset_arm_to_position(self.ee_position)
+        self._set_gripper(open_gripper=self.gripper_open)
         self._sync_ee_position()
 
         if scenario.task_name == "pick_and_place":
@@ -114,8 +146,8 @@ class PyBulletSimulator(SimulatorBackend):
             self.object_id = self._create_box(
                 half_extents=[0.025, 0.025, 0.025],
                 position=self.object_position,
-                color=[0.1, 0.35, 0.9, 1.0],
-                mass=0.05,
+                color=[0.12, 0.38, 0.88, 1.0],
+                mass=0.0,
             )
 
         self._create_target_marker(np.array(scenario.target_state["position"], dtype=np.float32))
@@ -124,7 +156,7 @@ class PyBulletSimulator(SimulatorBackend):
                 self._create_box(
                     half_extents=obstacle["half_extents"],
                     position=obstacle["center"],
-                    color=[0.8, 0.25, 0.15, 0.8],
+                    color=[0.80, 0.22, 0.16, 0.90],
                     mass=0.0,
                 )
             )
@@ -145,10 +177,11 @@ class PyBulletSimulator(SimulatorBackend):
         target_position = self._clip_to_workspace(target_position)
 
         self._set_arm_to_position(target_position)
+        self._set_gripper(open_gripper=action[3] > 0.5)
         for _ in range(self.action_repeat):
             self._p.stepSimulation(physicsClientId=self._client_id)
             if self.gui and self.sleep_gui:
-                time.sleep(1.0 / 120.0)
+                time.sleep(1.0 / 240.0)
 
         self._sync_ee_position()
         self._update_gripper(action[3], grasp_threshold)
@@ -204,42 +237,86 @@ class PyBulletSimulator(SimulatorBackend):
             self._p.disconnect(self._client_id)
         self._client_id = None
 
-    def _set_arm_to_position(self, position: np.ndarray) -> None:
-        joint_positions = self._p.calculateInverseKinematics(
+    def _cache_joint_limits(self) -> None:
+        lowers = []
+        uppers = []
+        ranges = []
+        for joint_index in self.joint_indices:
+            info = self._p.getJointInfo(self.robot_id, joint_index, physicsClientId=self._client_id)
+            lower, upper = float(info[8]), float(info[9])
+            lowers.append(lower)
+            uppers.append(upper)
+            ranges.append(max(upper - lower, 0.1))
+        self._lower_limits = lowers
+        self._upper_limits = uppers
+        self._joint_ranges = ranges
+
+    def _reset_arm_home(self) -> None:
+        for joint_index, joint_position in zip(self.joint_indices, self._PANDA_REST):
+            self._p.resetJointState(
+                self.robot_id,
+                joint_index,
+                joint_position,
+                targetVelocity=0.0,
+                physicsClientId=self._client_id,
+            )
+
+    def _inverse_kinematics(self, position: np.ndarray, iterations: int, residual: float):
+        return self._p.calculateInverseKinematics(
             self.robot_id,
             self.ee_link_index,
             position.tolist(),
-            maxNumIterations=80,
-            residualThreshold=1e-4,
+            lowerLimits=self._lower_limits,
+            upperLimits=self._upper_limits,
+            jointRanges=self._joint_ranges,
+            restPoses=self._PANDA_REST,
+            maxNumIterations=iterations,
+            residualThreshold=residual,
             physicsClientId=self._client_id,
         )
+
+    def _set_arm_to_position(self, position: np.ndarray) -> None:
+        joint_positions = self._inverse_kinematics(position, iterations=100, residual=1e-4)
         for joint_index, joint_position in zip(self.joint_indices, joint_positions[:7]):
             self._p.setJointMotorControl2(
                 self.robot_id,
                 joint_index,
                 self._p.POSITION_CONTROL,
                 targetPosition=joint_position,
-                force=500,
-                positionGain=0.18,
-                velocityGain=0.9,
+                force=200,
+                positionGain=0.12,
+                velocityGain=1.0,
                 physicsClientId=self._client_id,
             )
 
     def _reset_arm_to_position(self, position: np.ndarray) -> None:
-        joint_positions = self._p.calculateInverseKinematics(
-            self.robot_id,
-            self.ee_link_index,
-            position.tolist(),
-            maxNumIterations=120,
-            residualThreshold=1e-5,
-            physicsClientId=self._client_id,
-        )
+        joint_positions = self._inverse_kinematics(position, iterations=200, residual=1e-5)
         for joint_index, joint_position in zip(self.joint_indices, joint_positions[:7]):
             self._p.resetJointState(
                 self.robot_id,
                 joint_index,
                 joint_position,
                 targetVelocity=0.0,
+                physicsClientId=self._client_id,
+            )
+            self._p.setJointMotorControl2(
+                self.robot_id,
+                joint_index,
+                self._p.POSITION_CONTROL,
+                targetPosition=joint_position,
+                force=200,
+                physicsClientId=self._client_id,
+            )
+
+    def _set_gripper(self, open_gripper: bool) -> None:
+        target = 0.04 if open_gripper else 0.0
+        for joint_index in self.finger_indices:
+            self._p.setJointMotorControl2(
+                self.robot_id,
+                joint_index,
+                self._p.POSITION_CONTROL,
+                targetPosition=target,
+                force=20,
                 physicsClientId=self._client_id,
             )
 
@@ -300,9 +377,6 @@ class PyBulletSimulator(SimulatorBackend):
     def _has_collision(self) -> bool:
         zones = list(self._scenario.safety_criteria.get("collision_zones", []))
         zones.extend(self._scenario.environment_params.get("obstacles", []))
-        if not zones:
-            return False
-
         points = [self.ee_position]
         if self.object_position is not None:
             points.append(self.object_position)
@@ -312,6 +386,23 @@ class PyBulletSimulator(SimulatorBackend):
             half_extent = np.array(zone["half_extents"], dtype=np.float32)
             for point in points:
                 if np.all(np.abs(point - center) <= half_extent):
+                    return True
+
+        for obstacle_id in self.obstacle_ids:
+            contacts = self._p.getContactPoints(
+                bodyA=self.robot_id,
+                bodyB=obstacle_id,
+                physicsClientId=self._client_id,
+            )
+            if contacts:
+                return True
+            if self.object_id is not None:
+                obj_contacts = self._p.getContactPoints(
+                    bodyA=self.object_id,
+                    bodyB=obstacle_id,
+                    physicsClientId=self._client_id,
+                )
+                if obj_contacts:
                     return True
         return False
 
@@ -339,7 +430,7 @@ class PyBulletSimulator(SimulatorBackend):
         visual_shape = self._p.createVisualShape(
             self._p.GEOM_SPHERE,
             radius=0.03,
-            rgbaColor=[0.1, 0.75, 0.25, 0.85],
+            rgbaColor=[0.12, 0.72, 0.28, 0.90],
             physicsClientId=self._client_id,
         )
         self.target_id = self._p.createMultiBody(

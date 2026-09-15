@@ -46,3 +46,29 @@ def test_pybullet_simulator_runs_one_step(scenarios_dir):
     assert isinstance(reward, float)
     assert isinstance(done, bool)
     assert info["simulator"] == "pybullet"
+
+
+def test_pybullet_simulator_seeded_step_is_deterministic(scenarios_dir):
+    pytest.importorskip("pybullet")
+    manager = ScenarioManager()
+    scenarios = manager.load_scenarios(str(scenarios_dir))
+    scenario = next(s for s in scenarios if s.scenario_id == "reach_simple")
+    action = np.array([0.02, 0.01, 0.0, 1.0], dtype=np.float32)
+
+    def one_step():
+        sim = PyBulletSimulator(gui=False, action_repeat=2)
+        try:
+            sim.seed(42)
+            obs = sim.reset(scenario)
+            next_obs, reward, done, info = sim.step(action)
+            return obs, next_obs, reward, done, info["distance_to_target"]
+        finally:
+            sim.close()
+
+    first = one_step()
+    second = one_step()
+    np.testing.assert_allclose(first[0], second[0], atol=1e-5)
+    np.testing.assert_allclose(first[1], second[1], atol=1e-5)
+    assert first[2] == second[2]
+    assert first[3] == second[3]
+    assert first[4] == second[4]
