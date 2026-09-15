@@ -1,415 +1,260 @@
-Robot CI
+# Robot CI
 
-Continuous Regression Testing Framework for Robotic Manipulation Policies
+## Continuous Regression Testing for Robotic Manipulation Policies
 
-Robot CI is a simulation-based framework for testing changes to robotic manipulation policies.
+Robot CI is a simulation-based framework for testing changes made to robotic manipulation policies.
 
-The main idea is to run a baseline policy and a candidate policy under the same conditions, collect their rollout data, compare their performance, and identify whether the candidate introduces a regression.
+The idea is to run a baseline policy and a candidate policy under the same conditions, collect their results, compare their performance, and identify whether the candidate introduces a regression.
 
-Currently, the framework uses PyBullet for simulation and provides a Streamlit dashboard for analysing the results.
-
-1. Overview
+The current implementation uses PyBullet for simulation and Streamlit for visualising the results.
 
-When a robot policy is updated, it can be difficult to tell whether the new version actually improved the system or introduced new problems.
+## Overview
 
-Robot CI treats robot policies similar to software versions:
+Robot CI currently follows this workflow:
 
-Baseline Policy ─────┐
-                     │
-                     ├──> Same Scenario + Same Seed
-                     │
-Candidate Policy ────┘
-                            │
-                            ↓
-                     PyBullet Simulation
-                            │
-                            ↓
-                       Rollout Data
-                            │
-                            ↓
-                    Metric Evaluation
-                            │
-                            ↓
-                   Regression Detection
-                            │
-                            ↓
-                     Results + Dashboard
+1. Load the baseline policy
+2. Load the candidate policy
+3. Load the selected test scenarios
+4. Run both policies using the same scenario and seed
+5. Record the rollout data
+6. Calculate performance metrics
+7. Compare the candidate against the baseline
+8. Detect regressions
+9. Store the results
+10. Display the results through the dashboard
 
-This makes it possible to test policy changes in a repeatable way before moving towards physical robot testing.
+## Current Features
 
-2. Current Features
-Feature	Status
-Baseline / Candidate policies	✅
-PyBullet simulation	✅
-Mock simulator	✅
-Reaching scenarios	✅
-Pick & Place scenarios	✅
-Fixed-seed evaluation	✅
-Rollout recording	✅
-Behavioural metrics	✅
-Regression detection	✅
-JSON result storage	✅
-Streamlit dashboard	✅
-Interactive PyBullet demo	✅
-Isaac Sim / Isaac Lab	Planned
-Physical robot validation	Planned
-ROS 2 integration	Planned
-CI/CD integration	Planned
-3. Scenarios
+- Baseline and candidate policy comparison
+- PyBullet simulation
+- Mock simulator for testing
+- Reaching scenarios
+- Pick-and-place scenarios
+- Fixed-seed evaluation
+- Rollout recording
+- Collision detection
+- Success/failure evaluation
+- Completion time tracking
+- Reward tracking
+- Regression detection
+- JSON result storage
+- Streamlit dashboard
+- Interactive PyBullet visualisation
 
-The current test set contains five scenarios.
+## Scenarios
 
-Reaching
-reach_simple
-reach_diagonal
-Pick & Place
-pick_and_place_easy
-pick_and_place_medium
-pick_and_place_hard
+### Reaching
 
-Each scenario is defined separately using YAML files, which makes it easier to modify existing tests or add new ones without changing the main pipeline.
+- `reach_simple`
+- `reach_diagonal`
 
-4. Policies
+### Pick and Place
 
-Policies are located in:
+- `pick_and_place_easy`
+- `pick_and_place_medium`
+- `pick_and_place_hard`
 
-robot_ci/policies/
+## Policies
 
-The current implementation includes:
+Policies are located in `robot_ci/policies/`.
 
-Baseline Policy — reference version used for comparison
-Candidate Policy — version being tested
-Policy Interface — common interface used by policies
-Policy Registry — handles policy registration and loading
+The current implementation contains:
 
-Both policies are evaluated using the same:
+- `baseline` - reference policy used for comparison
+- `candidate` - policy being evaluated
+- `base.py` - common policy interface
+- `registry.py` - policy registration and loading
 
-Scenario
-Simulator
-Random seed
-Evaluation procedure
+Both policies are evaluated using the same scenario, simulator and random seed to keep the comparison consistent.
 
-This keeps the comparison consistent.
+## Simulation
 
-5. Simulation
+### PyBullet
 
-Robot CI currently supports two simulation backends.
+PyBullet is currently the main simulation backend.
 
-PyBullet
+It is used to simulate the robot, execute the policies and collect information such as:
 
-PyBullet is the main simulation backend used for the current implementation.
+- Robot state
+- End-effector position
+- Actions
+- Rewards
+- Collisions
+- Task completion
+- Number of simulation steps
 
-It provides:
+### Mock Simulator
 
-Physics simulation
-Franka Panda robot model
-Collision detection
-Object interaction
-Robot state information
-Visible simulation for demonstrations
-Mock Simulator
+A mock simulator is also available for faster development and testing without running the full physics simulation.
 
-The mock simulator is mainly useful for:
+## Rollouts and Telemetry
 
-Unit tests
-Fast development
-Testing the pipeline without running a full physics simulation
-6. Rollout & Telemetry
+During every simulation, Robot CI records the rollout generated by the policy.
 
-During a simulation, Robot CI records the behaviour of the policy.
+The rollout contains information such as observations, actions, rewards and simulation states.
 
-A rollout can contain:
+This data is then used by the evaluation and dashboard components.
 
-Observations
-Actions
-States
-Rewards
-Success / Failure
-Collision information
-Simulation steps
+Telemetry can be extracted from the rollout to analyse how the robot behaved throughout the simulation.
 
-The recorded rollout data is then used by the evaluation stage.
+Current telemetry includes:
 
-Telemetry can also be extracted for analysing how the robot behaved throughout the simulation rather than only looking at the final success/failure result.
+- Reward
+- End-effector position
+- Distance to target
+- Action magnitude
 
-7. Evaluation Metrics
+## Evaluation
 
-Robot CI currently compares the baseline and candidate using six metrics.
+The baseline and candidate policies are compared using metrics such as:
 
-Metric	Description
-Success Rate	Percentage of tasks completed successfully
-Completion Time	Number of simulation steps required
-Trajectory Deviation	Difference between baseline and candidate trajectories
-Collision Count	Number of detected collisions
-Action Difference	Difference between actions generated by the policies
-Reward Difference	Difference in cumulative reward
+- Success rate
+- Completion time
+- Collision count
+- Reward
+- Trajectory behaviour
+- Action behaviour
 
-These metrics are calculated from the actual simulation rollouts.
+The regression thresholds are defined in:
 
-8. Regression Detection
+`config/regression_thresholds.yaml`
 
-After evaluation, the candidate results are compared against the baseline.
+Based on the configured thresholds, a change can be classified as:
 
-Regression thresholds are configured in:
+- Minor regression
+- Major regression
+- Critical regression
 
-config/regression_thresholds.yaml
+The final pipeline result indicates whether a regression was detected.
 
-Depending on the size and importance of the difference, a regression can be classified as:
+## Results
 
-NONE
-MINOR
-MAJOR
-CRITICAL
+Results from pipeline runs are stored in the `results/` directory.
 
-The final pipeline result can be:
+Each run is saved as a JSON file containing information about the policies, scenarios, metrics and regression findings.
 
-PASS
-REGRESSION_DETECTED
+Previously generated results can also be loaded by the dashboard.
 
-For example, if the candidate takes significantly more steps or produces more collisions than the baseline, the system can flag the change as a regression.
+## Dashboard
 
-9. Results & Storage
+Robot CI includes a Streamlit dashboard for analysing the simulation results.
 
-Results from each pipeline run are stored in:
+The dashboard provides:
 
-results/
+- Baseline vs candidate comparison
+- Scenario-wise results
+- Regression status
+- Metric comparisons
+- Rollout telemetry
+- Reward trends
+- End-effector movement
+- Distance to target
+- Action magnitude
+- Historical results
 
-Each run produces a JSON result containing information such as:
+Start the dashboard using:
 
-Run ID
-Timestamp
-Baseline Policy
-Candidate Policy
-Scenario Results
-Evaluation Metrics
-Regression Findings
-Rollout Summary
+`python -m robot_ci dashboard`
 
-Example:
+## PyBullet Visualisation
 
-results/
-├── run_001.json
-├── run_002.json
-└── run_003.json
+An interactive PyBullet demonstration is available for visually observing the policies.
 
-This allows previous test runs to be loaded later without running the simulation again.
+For example:
 
-10. Dashboard
+`python -m robot_ci demo --policy baseline --scenario reach_simple`
 
-Robot CI includes a Streamlit dashboard for viewing the results.
+or:
 
-The dashboard is intended to provide a more convenient way to analyse the simulation output instead of relying only on terminal logs.
+`python -m robot_ci demo --policy candidate --scenario pick_and_place_easy`
 
-It can be used to view:
+The visualisation is mainly intended for observing the robot's behaviour. The automated regression evaluation is performed separately through the pipeline.
 
-Baseline vs Candidate metrics
-Regression results
-Regression severity
-Scenario-wise performance
-Stored test runs
-Rollout telemetry
-Performance comparisons
+## Installation
 
-Start the dashboard with:
+Clone the repository:
 
-python -m robot_ci dashboard
+`git clone https://github.com/aishukowta/robot-ci.git`
 
-Alternatively:
+Move into the project:
 
-streamlit run dashboard/app.py
-11. Interactive PyBullet Demo
+`cd robot-ci`
 
-A separate PyBullet demo is available for visually observing policy behaviour.
+Create a virtual environment:
 
-Run:
+`python -m venv .venv`
 
-python -m robot_ci demo --policy baseline --scenario reach_simple
+Activate it on Windows:
 
-For the candidate:
+`.\.venv\Scripts\activate`
 
-python -m robot_ci demo --policy candidate --scenario reach_simple
+Install the project dependencies:
 
-Other scenarios can also be selected:
+`pip install -e ".[dev]"`
 
-python -m robot_ci demo --policy baseline --scenario pick_and_place_easy
-
-The demo is mainly intended for visual inspection and presentations, while the automated pipeline runs the simulations without the GUI.
-
-12. Running the Project
-Clone the repository
-git clone https://github.com/aishukowta/robot-ci.git
-cd robot-ci
-Create a virtual environment
-python -m venv .venv
-Windows
-.\.venv\Scripts\activate
-Install dependencies
-pip install -e ".[dev]"
-13. Run the Regression Pipeline
-PyBullet
-python -m robot_ci run \
-    --baseline baseline \
-    --candidate candidate \
-    --scenarios scenarios/ \
-    --simulator pybullet \
-    --seed 42
-
-The pipeline performs the following steps:
-
-Loads the baseline policy
-Loads the candidate policy
-Loads the test scenarios
-Runs baseline rollouts
-Runs candidate rollouts
-Calculates evaluation metrics
-Compares the results
-Detects regressions
-Stores the results
-Mock Simulation
-
-For faster testing:
-
-python -m robot_ci run \
-    --baseline baseline \
-    --candidate candidate \
-    --scenarios scenarios/ \
-    --simulator mock
-14. Running Tests
-
-Run the complete test suite:
-
-pytest tests/ -v
-
-Run with coverage:
-
-pytest tests/ -v --cov=robot_ci
-
-Run the end-to-end pipeline test:
-
-pytest tests/test_pipeline_e2e.py -v
-15. Project Structure
-robot-ci/
-│
-├── config/
-│   └── regression_thresholds.yaml
-│
-├── robot_ci/
-│   │
-│   ├── policies/
-│   │   ├── base.py
-│   │   ├── baseline.py
-│   │   ├── candidate.py
-│   │   └── registry.py
-│   │
-│   ├── scenarios/
-│   │   ├── models.py
-│   │   └── manager.py
-│   │
-│   ├── simulation/
-│   │   ├── backend.py
-│   │   ├── mock.py
-│   │   └── pybullet_sim.py
-│   │
-│   ├── replay/
-│   │   ├── rollout.py
-│   │   └── engine.py
-│   │
-│   ├── evaluation/
-│   │   ├── evaluator.py
-│   │   └── metrics/
-│   │
-│   ├── regression/
-│   │   └── detector.py
-│   │
-│   ├── results/
-│   │   ├── models.py
-│   │   └── store.py
-│   │
-│   └── pipeline/
-│       └── runner.py
-│
-├── dashboard/
-│   └── app.py
-│
-├── scenarios/
-│   ├── reach_simple.yaml
-│   ├── reach_diagonal.yaml
-│   ├── pick_and_place_easy.yaml
-│   ├── pick_and_place_medium.yaml
-│   └── pick_and_place_hard.yaml
-│
-├── tests/
-│
-├── results/
-├── pyproject.toml
-└── README.md
-16. Example Workflow
-
-A typical Robot CI test looks like this:
-
-1. Develop a new policy
-          ↓
-2. Register the policy
-          ↓
-3. Select baseline + candidate
-          ↓
-4. Select test scenario(s)
-          ↓
-5. Run PyBullet evaluation
-          ↓
-6. Record rollout telemetry
-          ↓
-7. Calculate metrics
-          ↓
-8. Compare with baseline
-          ↓
-9. Detect regressions
-          ↓
-10. Store JSON result
-          ↓
-11. Analyse results in dashboard
-17. Current Limitations
-
-The current version is mainly focused on establishing the regression-testing workflow.
-
-Simulation
-
-PyBullet is currently used instead of Isaac Sim because the available development machine does not have the required NVIDIA GPU.
-
-Policies
-
-The included policies are relatively simple controllers. They are currently used to demonstrate the testing framework rather than represent a production-scale learned manipulation policy.
-
-Statistical Testing
-
-The current setup uses a fixed seed for deterministic comparisons. Running multiple seeds would provide more robust statistical evaluation.
-
-Sim-to-Real
-
-The current version does not yet perform a complete sim-to-real analysis.
-
-Physical Robot
-
-Physical robot validation is planned but is not part of the current implementation.
-
-CI/CD
-
-Automated GitHub Actions and Docker execution are also planned for a later stage.
-
-18. Future Work
-
-Some of the next areas for development are:
-
-Multi-seed statistical evaluation
-Sim-to-real gap analysis
-Confidence scoring
-ROS 2 integration
-Physical robot validation
-Isaac Sim / Isaac Lab integration
-Automated CI/CD testing
-Docker-based execution
-More complex learned policies
-Larger scenario libraries
-19. License
-
-University Project I — Fall Semester 2026–27
+## Running the Regression Pipeline
+
+To run the complete PyBullet regression evaluation:
+
+`python -m robot_ci run --baseline baseline --candidate candidate --simulator pybullet`
+
+The pipeline runs both policies, evaluates their performance and stores the resulting report in the `results/` directory.
+
+For a faster mock evaluation:
+
+`python -m robot_ci run --baseline baseline --candidate candidate --simulator mock`
+
+## Running Tests
+
+Run the complete test suite using:
+
+`pytest`
+
+The tests cover the policies, scenarios, simulation, replay, evaluation, regression detection and end-to-end pipeline.
+
+## Project Structure
+
+The main parts of the project are:
+
+- `robot_ci/policies/` - policy implementations and registry
+- `robot_ci/scenarios/` - scenario management
+- `robot_ci/simulation/` - simulation backends
+- `robot_ci/replay/` - rollout and replay handling
+- `robot_ci/evaluation/` - metric calculation
+- `robot_ci/regression/` - regression detection
+- `robot_ci/results/` - result models and storage
+- `robot_ci/pipeline/` - main evaluation pipeline
+- `dashboard/` - Streamlit dashboard
+- `scenarios/` - scenario configuration files
+- `tests/` - project tests
+- `config/` - regression configuration
+- `results/` - generated test results
+
+## Current Limitations
+
+The current version focuses on establishing the simulation-based regression testing workflow.
+
+At the moment:
+
+- PyBullet is the primary physics simulator.
+- The included policies are demonstration controllers.
+- Evaluation currently uses deterministic seeds.
+- Physical robot testing has not yet been integrated.
+- ROS 2 integration is planned.
+- Isaac Sim / Isaac Lab integration is planned.
+
+## Future Work
+
+Future development will focus on:
+
+- Multi-seed evaluation
+- More complex learned policies
+- Sim-to-real analysis
+- ROS 2 integration
+- Physical robot validation
+- Isaac Sim / Isaac Lab support
+- Automated CI/CD execution
+
+## Development
+
+Robot CI is being developed as a project around continuous regression testing for robotic manipulation policies, with the current focus on building a reliable simulation, evaluation, regression detection and visualisation workflow.
