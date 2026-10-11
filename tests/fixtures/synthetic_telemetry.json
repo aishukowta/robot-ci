@@ -1,0 +1,55 @@
+{
+  "session_id": "synthetic_ur5e_reach_fixture",
+  "provenance": {
+    "data_origin": "synthetic",
+    "source_id": "synthetic_reach_log_01",
+    "recording_format": "json",
+    "is_synthetic": true,
+    "recorded_at": "2026-10-11T12:00:00.000Z",
+    "time_basis": "UTC_EPOCH_SECONDS",
+    "notes": "Clearly labeled synthetic telemetry fixture for offline evaluation and trajectory comparison demonstrations."
+  },
+  "records": [
+    {
+      "timestamp": 0.0,
+      "timestamp_iso": "2026-10-11T12:00:00.000Z",
+      "ee_position": [0.5, 0.0, 0.3],
+      "joint_positions": [0.0, -0.5, 0.5, 0.0, 0.5, 0.0],
+      "gripper_state": 1.0,
+      "action": [0.0, 0.0, 0.0, 1.0]
+    },
+    {
+      "timestamp": 0.1,
+      "timestamp_iso": "2026-10-11T12:00:00.100Z",
+      "ee_position": [0.52, 0.01, 0.31],
+      "joint_positions": [0.02, -0.48, 0.51, 0.0, 0.5, 0.0],
+      "gripper_state": 1.0,
+      "action": [0.02, 0.01, 0.01, 1.0]
+    },
+    {
+      "timestamp": 0.2,
+      "timestamp_iso": "2026-10-11T12:00:00.200Z",
+      "ee_position": [0.54, 0.015, 0.315],
+      "joint_positions": [0.04, -0.46, 0.52, 0.0, 0.5, 0.0],
+      "gripper_state": 1.0,
+      "action": [0.02, 0.005, 0.005, 1.0]
+    },
+    {
+      "timestamp": 0.3,
+      "timestamp_iso": "2026-10-11T12:00:00.300Z",
+      "ee_position": [0.55, 0.02, 0.32],
+      "joint_positions": [0.05, -0.45, 0.53, 0.0, 0.5, 0.0],
+      "gripper_state": 0.0,
+      "action": [0.01, 0.005, 0.005, 0.0],
+      "events": {
+        "contact": true,
+        "success": true
+      }
+    }
+  ],
+  "metadata": {
+    "synthetic": true,
+    "scenario_id": "reach_simple",
+    "purpose": "Module 10 offline analysis demonstration fixture"
+  }
+}

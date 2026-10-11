@@ -10,12 +10,12 @@ class ResultStore:
     
     def save(self, result: TestRunResult) -> str:
         filepath = self.results_dir / f"run_{result.run_id}.json"
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(result.to_dict(), f, indent=2)
         return str(filepath)
     
     def load(self, filepath: str) -> TestRunResult:
-        with open(filepath) as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             data = json.load(f)
         return TestRunResult.from_dict(data)
     

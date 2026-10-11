@@ -174,43 +174,222 @@ The visualisation is mainly intended for observing the robot's behaviour. The au
 
 Clone the repository:
 
-`git clone https://github.com/aishukowta/robot-ci.git`
+```bash
+git clone https://github.com/aishukowta/robot-ci.git
+cd robot-ci
+```
 
-Move into the project:
+Create and activate a Python 3.11 virtual environment:
 
-`cd robot-ci`
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+```
 
-Create a virtual environment:
+Install the project dependencies in editable mode:
 
-`python -m venv .venv`
-
-Activate it on Windows:
-
-`.\.venv\Scripts\activate`
-
-Install the project dependencies:
-
-`pip install -e ".[dev]"`
+```powershell
+pip install -e ".[dev]"
+```
 
 ## Running the Regression Pipeline
 
-To run the complete PyBullet regression evaluation:
+To run the complete PyBullet regression evaluation pipeline across all 5 scenarios:
 
-`python -m robot_ci run --baseline baseline --candidate candidate --simulator pybullet`
+```powershell
+.venv\Scripts\python.exe -m robot_ci run --baseline baseline --candidate candidate --simulator pybullet
+```
 
-The pipeline runs both policies, evaluates their performance and stores the resulting report in the `results/` directory.
+The pipeline runs both policies on matched seeds, computes all 6 evaluation metrics, detects regressions against configured thresholds, and saves a JSON report in `results/`.
 
-For a faster mock evaluation:
+For a fast development run using the Mock simulator:
 
-`python -m robot_ci run --baseline baseline --candidate candidate --simulator mock`
+```powershell
+.venv\Scripts\python.exe -m robot_ci run --baseline baseline --candidate candidate --simulator mock
+```
 
 ## Running Tests
 
-Run the complete test suite using:
+Run the complete 168-test suite using the project's virtual environment:
 
-`pytest`
+```powershell
+.venv\Scripts\python.exe -m pytest
+```
 
-The tests cover the policies, scenarios, simulation, replay, evaluation, regression detection and end-to-end pipeline.
+The tests cover scenario loading and validation, policy execution, PyBullet and Mock simulators, rollout telemetry, evaluation metrics, regression detection, JSON persistence, end-to-end pipeline execution, offline telemetry ingestion and sim-to-real comparison, hardware safety gating and fake transport, ROS 2 message mappings, genuine MCAP container decoding, report integrity verification, video marker tracking / trajectory extraction, camera-calibrated / shape-only video-to-simulation trajectory comparison, and multi-source evidence-based diagnosis.
+
+## Unified Streamlit Dashboard (Phases 3 & 4)
+
+Robot CI provides a unified Streamlit dashboard (`dashboard/app.py`) divided into three operational sections:
+
+### Section A: Policy Regression
+- **CI Run Reports & Regressions**: Inspects actual saved JSON runs from `results/`, displaying run metadata, overall pass/fail status, summary metrics, per-scenario breakdown (success, steps, collisions, reward), and detailed regression findings highlighting the responsible thresholds.
+- **Interactive PyBullet Simulation & Telemetry**: Runs genuine PyBullet rollouts with interactive policy/scenario selection, telemetry speed control, step-level metric plots (Reward, EE X/Y/Z, Distance to Target, Action Magnitude), and baseline-vs-candidate comparison views.
+- **Offline Telemetry Analysis**: Ingestion panel for recorded JSON/JSONL telemetry logs, checking data schema coverage, validation errors/warnings, and trajectory similarity.
+
+### Section B: Real-to-Simulation
+- **Video Selection & Extraction**: Upload `.mp4`/`.mov` files or select pre-extracted fixtures, configuring HSV marker color presets, contour area thresholds, and morphological cleaning.
+- **Trajectory Preview**: Displays tracking coverage %, lost frame warnings, and interactive 2D path plots in image pixel space $[u, v]$ and normalized screen space $[u_{norm}, v_{norm}]$.
+- **Simulation Rollout & Comparison**: Executes an actual PyBullet or Mock rollout for the selected scenario and policy.
+- **Dual Comparison Modes**: Supports Mode A (Calibrated Projection with pinhole camera models) and Mode B (Shape-Only 2D with normalized progress resampling and Procrustes alignment).
+- **Audit & Persistence**: Displays RMS/Mean/Max/DTW deviations in strictly documented units (`pixels` vs `normalized_units`), transparency logs for geometric transformations, lists of unavailable hardware metrics, and persistent report export.
+
+### Section C: Evidence-Based Diagnosis (Phase 4)
+- **Multi-Source Evaluation**: Combines simulation policy-regression benchmarks and real-to-sim video trajectory comparisons into evidence-based problem assessments:
+  - `POLICY_REGRESSION_LIKELY`
+  - `SIM_TO_REAL_MISMATCH_LIKELY`
+  - `BOTH_ISSUES_LIKELY`
+  - `NO_REGRESSION_DETECTED`
+  - `INCONCLUSIVE_INSUFFICIENT_EVIDENCE`
+- **Rigorous Evidence Rules**:
+  - Synthetic video fixtures are never accepted as physical robot evidence.
+  - Teleoperated recordings are treated as cross-controller checks, not proof of policy execution.
+  - Incomplete or low-coverage tracking fails safe to `INCONCLUSIVE_INSUFFICIENT_EVIDENCE`.
+  - Transparently lists unsupported conclusions and fundamental measurement limitations.
+
+To launch the dashboard:
+```powershell
+.venv\Scripts\python.exe -m robot_ci dashboard
+# Or directly:
+.venv\Scripts\python.exe -m streamlit run dashboard/app.py
+```
+
+## Video-to-Simulation Trajectory Comparison (Phase 2)
+
+Robot CI provides a real-to-simulation end-effector trajectory comparison engine in `robot_ci/vision/` to quantitatively compare physical video trajectories against actual PyBullet simulation rollouts.
+
+### Comparison Modes
+
+1. **Mode A — Calibrated Projection Mode (`CALIBRATED_PROJECTION`)**:
+   - Requires verified pinhole camera calibration parameters (`CameraCalibration`: $f_x, f_y, c_x, c_y, R, t$).
+   - Validates camera extrinsics orthonormality ($R^T R = I$, $\det(R) = +1$) and positive depth ($z_c > 0$).
+   - Projects simulated 3D robot base coordinates $[X, Y, Z]$ into 2D camera pixel coordinates $[u, v]$ and normalized screen space $[u_{norm}, v_{norm}]$.
+   - Reports trajectory deviations strictly in **camera pixel units (`pixels` / `px`)**.
+   - Explicitly disclaims that 2D reprojection deviations are not 3D metric errors in meters.
+
+2. **Mode B — Shape-Only Comparison Mode (`SHAPE_ONLY_2D`)**:
+   - Used when camera calibration is unavailable.
+   - Extracts detected video positions in normalized screen space $[0, 1]$.
+   - Projects simulated 3D motion onto a canonical viewing plane (`xy`, `xz`, or `yz`) and normalizes to $[0, 1]$.
+   - Resamples both curves uniformly across normalized progress $\tau \in [0, 1]$ and performs optimal 2D Procrustes rigid alignment (transparently recording translation, rotation in degrees, and scale factor).
+   - Reports deviations strictly in **`normalized_units (dimensionless)`**.
+   - Strictly disclaims physical metric distances, joint angles, contact forces, or safety confirmation.
+
+### CLI Workflow
+
+Compare an extracted video trajectory to an actual PyBullet simulation rollout:
+
+```powershell
+# Shape-Only Mode (Uncalibrated Video)
+.venv\Scripts\python.exe -m robot_ci compare-video-sim --trajectory results/telemetry/synthetic_phone_trajectory.json --scenario reach_simple --policy baseline --simulator pybullet --controller human_teleop --output results/video_sim_comparisons/e2e_shape_only_comparison.json
+
+# Calibrated Projection Mode (With Camera Calibration)
+.venv\Scripts\python.exe -m robot_ci compare-video-sim --trajectory results/telemetry/synthetic_phone_trajectory.json --scenario reach_simple --policy baseline --simulator pybullet --calibration tests/fixtures/synthetic_camera_calibration.json --controller baseline --output results/video_sim_comparisons/e2e_calibrated_comparison.json
+```
+
+### Policy & Controller Association
+
+- If the physical controller matches the simulation policy, the run is documented as `matched_policy_verification`.
+- If controllers differ or the physical controller is unknown/manual, it is explicitly classified as `cross_controller_behavioural_comparison` with warnings generated.
+
+## Video-to-Trajectory Extraction (Phase 1)
+
+Robot CI includes a visual analysis pipeline in `robot_ci/vision/` to extract visible 2D end-effector trajectories from prerecorded phone videos of a robotic arm:
+
+- **Supported Formats**: `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.m4v`.
+- **Marker Segmentation (`MarkerTracker`)**:
+  - Color presets: `red` (with dual-interval HSV wrap-around $0^\circ–10^\circ$ and $160^\circ–179^\circ$), `green`, `blue`, `yellow`, `orange`, `cyan`, `magenta`.
+  - Custom HSV ranges (`hsv_lower`, `hsv_upper`).
+  - Circularity and contour area filtering to reject non-marker background noise.
+  - Spatial proximity windowing (`max_jump_pixels`, `search_window_radius`) to prevent track loss.
+  - Manual Region of Interest (`roi=(x, y, w, h)`) to constrain tracking to the robot workspace.
+- **Coordinate Space & Safety Integrity**:
+  - All observations are strictly recorded in **2D image space** (`[u, v]` in pixels, `[u_norm, v_norm]` in $[0, 1]$ screen space).
+  - Pixel coordinates are **never labeled as meters**. Ordinary monocular video without camera calibration cannot infer metric 3D positions, joint angles, contact forces, or physical safety.
+  - If a marker is occluded or lost, the frame is explicitly marked `LOST` with confidence `0.0`. **Missing observations are never silently filled or interpolated.**
+- **Export Formats**:
+  - Documented JSON: Full frame metadata, detection statistics, and coordinate arrays.
+  - Standard CSV: Frame-by-frame timestamps, detection status, pixel coordinates, and normalized coordinates.
+  - Telemetry Adapter: Can be loaded into `RecordedTelemetry` with `data_origin="video_extracted"`, `time_basis="VIDEO_RELATIVE_SECONDS"`, and `ee_position=None`.
+
+### Optional Dependency Installation
+```powershell
+pip install -e ".[vision]"
+# Or directly:
+pip install opencv-python>=4.8.0
+```
+
+### Procedure for Analyzing Real Phone Recordings Tomorrow
+
+1. **Attach Marker**: Place a high-contrast circular marker (bright red or green tape) on the arm's end-effector or gripper flange.
+2. **Setup Camera**: Position the smartphone on a stable stand or tripod with a clear, unobstructed side or front-oblique view of the robot workspace. Avoid direct glare or strong backlighting.
+3. **Record Motion**: Record the arm's task execution at 30 or 60 FPS in standard `.mp4` or `.mov` format.
+4. **Transfer Video**: Save the video file into the project (e.g. `results/videos/robot_run.mp4`).
+5. **Execute Extraction**:
+   ```powershell
+   .venv\Scripts\python.exe -m robot_ci extract-trajectory --video results/videos/robot_run.mp4 --color red --output results/telemetry/robot_run_trajectory.json --csv results/telemetry/robot_run_trajectory.csv
+   ```
+6. **Verify Results**: Check the summary output for `detection_rate` (aim for $>90\%$). Inspect `results/telemetry/robot_run_trajectory.csv` for smooth image coordinates and verify that any occluded frames are properly flagged as `LOST`.
+
+## End-to-End Demonstration Procedure
+
+The complete Robot CI workflow can be demonstrated reproducibly using only the dependencies available in the standard local environment:
+
+### Prerequisites
+- Python 3.11+
+- Virtual environment with project dependencies: `.venv`
+
+### Step 1: Verify the Test Suite
+```powershell
+.venv\Scripts\python.exe -m pytest
+```
+*Expected Result:* 136 passing unit and integration tests confirming simulation backends, safety validators, telemetry adapters, regression metrics, and video tracking.
+
+### Step 2: Run Continuous Regression Evaluation (Headless Simulation)
+Run the full regression evaluation pipeline across all 5 benchmark manipulation scenarios:
+```powershell
+.venv\Scripts\python.exe -m robot_ci run --baseline baseline --candidate candidate --simulator pybullet
+```
+*Understanding Results and Exit Codes:*
+- **Exit Code 0**: All candidate metrics meet configured thresholds (`PASS`).
+- **Exit Code 1**: At least one metric exceeded regression threshold (`REGRESSION_DETECTED`). The candidate policy intentionally exhibits regressions in completion time, collisions, and rewards on hard scenarios. This is an expected regression finding, distinct from an execution crash.
+- **Saved Artifact**: `results/run_<run_id>.json` contains all per-scenario rollout statistics, aggregate metric deltas, and regression severity classifications.
+
+### Step 3: Run Interactive Visual Simulation Demo
+Launch the interactive PyBullet GUI with parameter sliders and camera viewport:
+```powershell
+.venv\Scripts\python.exe -m robot_ci demo --policy baseline --scenario reach_simple
+```
+*Features:* GUI controls for Play/Pause, Step 1 Frame, Reset, Speed Adjustment (0.1x–5.0x), and live viewport telemetry overlays.
+
+### Step 4: Extract Video Trajectory from Phone Recording / Synthetic Fixture
+Run the video-to-trajectory extraction pipeline on a video:
+```powershell
+.venv\Scripts\python.exe -m robot_ci extract-trajectory --video tests/fixtures/synthetic_phone_recording.mp4 --color red --output results/telemetry/synthetic_phone_trajectory.json --csv results/telemetry/synthetic_phone_trajectory.csv
+```
+*Visual Tracking & Coordinate Integrity:*
+- Computes pixel and normalized $[0, 1]$ screen-space trajectories without claiming 3D metric units.
+- Generates `results/telemetry/synthetic_phone_trajectory.json` and `.csv`.
+
+### Step 5: Analyze Recorded / Synthetic Telemetry (Offline Workflow)
+Run offline telemetry ingestion and trajectory similarity comparison against simulated baseline:
+```powershell
+.venv\Scripts\python.exe -m robot_ci analyze-telemetry --input tests\fixtures\synthetic_telemetry.json --sim-scenario reach_simple --simulator mock
+```
+*Report Integrity & Provenance:*
+- Synthetic fixtures are explicitly identified (`data_origin="synthetic"`, `is_synthetic=True`).
+- Compares 3D end-effector paths via normalized progress resampling and Dynamic Time Warping (DTW).
+- Unsupported metrics (`reward_difference`) are explicitly flagged with uncomputable reasons rather than fabricated.
+- **Saved Artifact**: `results/telemetry/offline_report_<id>.json`.
+
+### Step 6: Visualize Results in Streamlit Dashboard
+Launch the web dashboard to inspect persistent run history, telemetry charts, and sim-to-real comparisons:
+```powershell
+.venv\Scripts\python.exe -m robot_ci dashboard
+# Or directly via streamlit:
+.venv\Scripts\python.exe -m streamlit run dashboard/app.py
+```
+
 
 ## Project Structure
 
@@ -224,37 +403,149 @@ The main parts of the project are:
 - `robot_ci/regression/` - regression detection
 - `robot_ci/results/` - result models and storage
 - `robot_ci/pipeline/` - main evaluation pipeline
+- `robot_ci/transport/` - hardware communication, safety gating, ROS 2 adapters and message mappings
+- `robot_ci/telemetry/` - telemetry models, JSON/JSONL/MCAP readers, and sim-to-real trajectory comparison
 - `dashboard/` - Streamlit dashboard
 - `scenarios/` - scenario configuration files
 - `tests/` - project tests
 - `config/` - regression configuration
 - `results/` - generated test results
 
+## Hardware Abstraction & Robot Communication Transport
+
+Robot CI includes a transport-independent hardware abstraction layer (`robot_ci/transport/`) to prepare for physical robot arm integration:
+
+- **Transport Contract (`RobotTransport`)**: Generic abstract interface defining connection lifecycle, sensor state reading, motion command dispatch, and safe-stop interlocks.
+- **Data Contracts (`RobotMeasurement`, `RobotCommand`, `TransportStatus`)**:
+  - Distinguishes joint-space commands from Cartesian pose commands.
+  - Distinguishes direct physical sensor measurements (`ACTUAL_SENSOR`) from derived state estimator telemetry (`DERIVED_ESTIMATE`).
+  - Distinguishes command receipt acknowledgment from physical goal completion.
+  - Distinguishes a safe-stop request from physical stop confirmation.
+- **Safety Gating (`HardwareSafetyValidator`)**:
+  - Rejects commands if transport is disconnected, faulted, safe-stop latched, or physical execution disabled.
+  - Rejects non-finite (NaN/Inf) values and excessive delta step magnitudes.
+  - Enforces workspace bounds and joint limits without inventing assumed safe bounds.
+- **Deterministic Test Double (`FakeRobotTransport`)**: Fully tested mock transport allowing deterministic unit testing of communication states, fault injection, and command gating without physical hardware.
+- **ROS 2 Adapter Status (`ROS2RobotTransport`)**:
+  - Implemented with configurable topic/service mappings (decoupled from any specific robot vendor).
+  - In the current Windows Python 3.11 environment, native ROS 2 (`rclpy`) is not present. Attempting to connect safely fails closed with a clear diagnostic (`ROS2UnavailableError`).
+
+## ROS 2 Message Mapping & Recorded Bag Ingestion (Module 12)
+
+Robot CI provides safe, pure message conversion functions in `robot_ci/transport/ros2_mapping.py` that do not require a live ROS 2 daemon:
+
+1. **`sensor_msgs/msg/JointState` Mapping (`ros_joint_state_to_measurement`)**:
+   - Maps measured joint positions, velocities, efforts, and joint names.
+   - Enforces units in radians and seconds (UTC float timestamp).
+   - Validates dimension consistency (`len(name) == len(position) == len(velocity)`).
+   - Validates numeric finiteness (rejects `NaN` and `Inf`).
+   - Categorizes telemetry as `MeasurementType.ACTUAL_SENSOR`.
+   - Validates coordinate frame ID; unrecognized frame IDs are rejected with `MappingValidationError`.
+
+2. **`geometry_msgs/msg/PoseStamped` Mapping (`ros_pose_stamped_to_measurement`)**:
+   - Maps Cartesian position $[x, y, z]$ (meters) and orientation $[qx, qy, qz, qw]$.
+   - Categorizes telemetry as `MeasurementType.DERIVED_ESTIMATE` (kinematic estimation).
+   - Validates quaternion normalization and rejects degenerate/near-zero rotations.
+   - Strict frame ID enforcement: never silently assumes unknown frames are the robot base frame. Rejects frame mismatches against expected reference frames.
+
+3. **MCAP Recorded Bag Ingestion (`robot_ci/telemetry/reader.py`)**:
+   - Genuine MCAP reading and writing supported via the official `mcap` library.
+   - Decodes recorded telemetry records and ROS 2 JSON-encoded topic streams (`/joint_states`, `/robot_ci/telemetry`).
+   - Generates normalized `RecordedTelemetry` with explicit provenance (`data_origin="recorded_offline"`, `recording_format="mcap"`, `is_synthetic=True`).
+   - Includes `write_mcap_telemetry()` utility for exporting recorded test sessions.
+
+4. **rosbag2 (.db3/SQLite) Status**:
+   - Rosbag2 `.db3` (SQLite3 storage plugin) parsing is fail-closed on Windows without native ROS 2 plugins or the `rosbags` library, raising `UnsupportedFormatError` with descriptive instructions.
+   - Standard ROS 2 bags exported in `.mcap` container format can be ingested directly on Windows.
+
+### Optional Dependencies & Installation
+
+To install optional MCAP support:
+```powershell
+pip install mcap>=1.0.0
+# Or install using the project's extras:
+pip install -e .[mcap]
+```
+
+To install offline SQLite `.db3` rosbag2 support:
+```powershell
+pip install rosbags
+```
+
+### Eventual Robot-Specific Adapter Requirements
+
+Connecting an actual physical robotic arm (e.g. Franka Emika Panda, UR5e, xArm) in the future will require:
+1. **Linux Runtime Environment**: Ubuntu 22.04 LTS with ROS 2 Humble/Iron and `rclpy`.
+2. **Robot-Specific Hardware Driver**: Manufacturer ROS 2 control package (`ros2_control` hardware interface or vendor driver node).
+3. **URDF & TF2 Tree**: Definitive kinematic URDF description to transform tool/flange frames (`tool0`, `wrist_3_link`) to the base frame (`base_link`).
+4. **Trajectory Controller**: An active `FollowJointTrajectory` action server with controller-confirmed goal feedback.
+5. **Physical E-Stop Interlock**: Hardware-acknowledged emergency stop loop before enabling actuation.
+
+## Hardware Integration Readiness Audit (Phase 5)
+
+Robot CI provides a non-intrusive, read-only hardware integration audit command to verify environment packages, ROS 2 runtime status, robot driver configuration, and critical safety parameters before attempting physical robot execution:
+
+```powershell
+# Run the readiness audit on the current machine
+.venv\Scripts\python.exe -m robot_ci check-hardware
+
+# Run with fake transport (disclaims physical execution for CI / simulation)
+.venv\Scripts\python.exe -m robot_ci check-hardware --transport fake
+
+# Run with a specific hardware configuration JSON and save structured report
+.venv\Scripts\python.exe -m robot_ci check-hardware --config config/hardware_config.json --output results/hardware_readiness/report.json
+```
+
+### Readiness Output Interpretation
+
+The audit computes an overall status and lists actionable blockers, warnings, and prerequisites:
+
+| Verdict | Meaning & Next Action |
+| :--- | :--- |
+| `BLOCKED` | **Execution Halted.** Critical safety configuration (workspace bounds, joint limits), robot model identity, or required drivers/transports are unconfigured. Physical execution is strictly refused. |
+| `READY_WITH_WARNINGS` | **Software / CI Testing Ready.** The setup is valid for software execution using `FakeRobotTransport`, but physical hardware execution has caveats (e.g., hardware E-Stop is unconfirmed, or simulation mode is active). |
+| `READY` | **Fully Verified.** All required packages, ROS 2 runtime, confirmed robot model, validated driver, safety bounds, and confirmed hardware E-Stop interlocks are present. |
+
+### Core Safety Principles
+
+1. **Strictly Read-Only**: The readiness check **NEVER** issues motion commands, step actions, or actuator currents.
+2. **Software Stop vs. Hardware Emergency Stop**:
+   - `request_safe_stop()` is a **software request** over network/RPC. It relies on OS scheduling and controller logic.
+   - A true Emergency Stop (E-Stop / Safe Torque Off - STO) is an electromechanical Category 3/4 PL d safety circuit disconnecting motor power. Robot CI never conflates software requests with hardware STO.
+3. **Sensor Measurements vs. Derived Estimates**:
+   - Encoder readings and joint positions/velocities/efforts are strictly categorized as `ACTUAL_SENSOR`.
+   - Cartesian poses derived from forward kinematics or camera video tracking are strictly categorized as `DERIVED_ESTIMATE`.
+4. **Command Acknowledgment vs. Physical Completion**:
+   - Command receipt acknowledgment (`receipt_acknowledged`) only confirms transport packet ingestion.
+   - Physical goal completion (`is_physically_completed`) requires closed-loop encoder convergence within tolerance $\epsilon$.
+5. **Fails Closed**: Physical execution remains **disabled by default**. Missing or invalid joint limits, workspace bounds, or robot models immediately block execution. Mock and PyBullet simulations remain 100% functional without ROS 2.
+
+### Prerequisites Before Live Robot Execution
+
+Before any physical robotic arm can be connected and commanded:
+1. **Host Environment**: Ubuntu 22.04 LTS with ROS 2 Humble/Iron, `rclpy`, `sensor_msgs`, and `geometry_msgs` installed with real-time kernel (`PREEMPT_RT`).
+2. **Robot Identity**: Confirmed manufacturer, exact model, kinematics, degrees of freedom, and certified URDF model.
+3. **Hardware Driver**: Authenticated vendor driver package or `ros2_control` hardware interface.
+4. **Safety Interlocks**: Certified physical Emergency Stop mushroom button and Safe Torque Off (STO) circuit wired and verified on-site.
+5. **Calibrated Workspace**: Physically measured 3D workspace bounding box and verified joint limits in radians.
+6. **Convergence Tolerance**: Configured joint deadband tolerance $\epsilon$ for verifying actual physical motion completion.
+
 ## Current Limitations
 
-The current version focuses on establishing the simulation-based regression testing workflow.
+The current version focuses on establishing the simulation-based regression testing workflow, offline recorded ingestion, and communication abstractions:
 
-At the moment:
-
-- PyBullet is the primary physics simulator.
-- The included policies are demonstration controllers.
-- Evaluation currently uses deterministic seeds.
-- Physical robot testing has not yet been integrated.
-- ROS 2 integration is planned.
-- Isaac Sim / Isaac Lab integration is planned.
+- PyBullet and MockSimulator are the active execution backends.
+- Physical robot testing is not available (physical command execution remains disabled).
+- Native ROS 2 runtime communication (`rclpy`) is unavailable on Windows and was not tested against a live ROS 2 daemon.
+- Message mapping and MCAP parsing are verified with genuine library-level data structures and container files without requiring live ROS 2 daemons.
 
 ## Future Work
 
 Future development will focus on:
 
+- Deployment and testing on Ubuntu 22.04 with native ROS 2 Humble
+- URDF-aware TF2 kinematic transforms
 - Multi-seed evaluation
-- More complex learned policies
 - Sim-to-real analysis
-- ROS 2 integration
-- Physical robot validation
+- Physical robot validation with hardware E-stop integration
 - Isaac Sim / Isaac Lab support
-- Automated CI/CD execution
-
-## Development
-
-Robot CI is being developed as a project around continuous regression testing for robotic manipulation policies, with the current focus on building a reliable simulation, evaluation, regression detection and visualisation workflow.

@@ -4,10 +4,10 @@ from typing import Tuple, Dict, Any
 from robot_ci.scenarios.models import Scenario
 
 class SimulatorBackend(ABC):
-    """Abstract interface for simulation backends.
+    """Abstract interface for execution and simulation backends.
     
-    Concrete implementations include MockSimulator (development) and
-    future Isaac Sim integration.
+    Concrete implementations include MockSimulator (development),
+    PyBulletSimulator (physics simulation), and HardwareBackend (robot hardware).
     """
     
     @abstractmethod
@@ -29,3 +29,24 @@ class SimulatorBackend(ABC):
     def seed(self, seed_value: int) -> None:
         """Set random seed for reproducibility."""
         ...
+
+    @property
+    def is_connected(self) -> bool:
+        """Return True if backend connection or session is active."""
+        return True
+
+    def get_status(self) -> Dict[str, Any]:
+        """Return backend connection and status dictionary."""
+        return {
+            "simulator": getattr(self, "name", "unknown"),
+            "is_connected": self.is_connected,
+            "state": self.get_state(),
+        }
+
+    def safe_stop(self) -> None:
+        """Request immediate safe-stop/brake for execution backend."""
+        pass
+
+    def close(self) -> None:
+        """Clean up resources or disconnect transport."""
+        pass

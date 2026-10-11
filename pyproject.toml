@@ -23,6 +23,13 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
 ]
+mcap = [
+    "mcap>=1.0.0",
+]
+vision = [
+    "opencv-python>=4.8.0",
+]
+
 
 [tool.setuptools.packages.find]
 where = ["."]

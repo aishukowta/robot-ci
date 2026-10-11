@@ -41,6 +41,8 @@ class PipelineRunner:
         print("\n[2/8] Loading scenarios...")
         manager = ScenarioManager()
         scenarios = manager.load_scenarios(scenarios_dir)
+        if not scenarios:
+            raise ValueError(f"No valid scenarios found in directory '{scenarios_dir}'.")
         print(f"  Loaded {len(scenarios)} scenarios: {[s.scenario_id for s in scenarios]}")
         
         # 3. Create simulator and replay engine
@@ -130,4 +132,7 @@ class PipelineRunner:
             return PyBulletSimulator(gui=False)
         if simulator_name == "mock":
             return MockSimulator()
-        raise ValueError(f"Unknown simulator: {simulator_name}. Available: pybullet, mock")
+        if simulator_name == "hardware":
+            from robot_ci.simulation.hardware import HardwareBackend
+            return HardwareBackend()
+        raise ValueError(f"Unknown simulator: {simulator_name}. Available: pybullet, mock, hardware")

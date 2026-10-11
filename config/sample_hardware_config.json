@@ -1,0 +1,31 @@
+{
+  "robot_name": "franka_emika_panda",
+  "joint_names": [
+    "panda_joint1",
+    "panda_joint2",
+    "panda_joint3",
+    "panda_joint4",
+    "panda_joint5",
+    "panda_joint6",
+    "panda_joint7"
+  ],
+  "joint_limits": {
+    "panda_joint1": [-2.8973, 2.8973],
+    "panda_joint2": [-1.7628, 1.7628],
+    "panda_joint3": [-2.8973, 2.8973],
+    "panda_joint4": [-3.0718, -0.0698],
+    "panda_joint5": [-2.8973, 2.8973],
+    "panda_joint6": [-0.0175, 3.7525],
+    "panda_joint7": [-2.8973, 2.8973]
+  },
+  "workspace_bounds": [
+    [0.2, -0.5, 0.0],
+    [0.8, 0.5, 0.8]
+  ],
+  "max_step_size": 0.03,
+  "enforce_workspace": true,
+  "enforce_joint_limits": true,
+  "hardware_transport_address": "192.168.1.100:50051",
+  "driver_type": "ros2_control/franka_hardware",
+  "driver_configured": true
+}

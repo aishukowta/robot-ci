@@ -21,16 +21,19 @@ class ScenarioManager:
         with open(filepath, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
             
+        if not isinstance(data, dict):
+            raise ValueError(f"Invalid YAML file at {filepath}: content must be a dictionary.")
+
         scenario = Scenario(
-            scenario_id=data.get("scenario_id", ""),
-            task_name=data.get("task_name", ""),
-            initial_state=data.get("initial_state", {}),
-            target_state=data.get("target_state", {}),
-            environment_params=data.get("environment_params", {}),
-            max_episode_steps=data.get("max_episode_steps", 0),
-            success_criteria=data.get("success_criteria", {}),
-            safety_criteria=data.get("safety_criteria", {}),
-            seed=data.get("seed", 42)
+            scenario_id=data.get("scenario_id") or "",
+            task_name=data.get("task_name") or "",
+            initial_state=data.get("initial_state") if isinstance(data.get("initial_state"), dict) else {},
+            target_state=data.get("target_state") if isinstance(data.get("target_state"), dict) else {},
+            environment_params=data.get("environment_params") if isinstance(data.get("environment_params"), dict) else {},
+            max_episode_steps=data.get("max_episode_steps") if data.get("max_episode_steps") is not None else 0,
+            success_criteria=data.get("success_criteria") if isinstance(data.get("success_criteria"), dict) else {},
+            safety_criteria=data.get("safety_criteria") if isinstance(data.get("safety_criteria"), dict) else {},
+            seed=data.get("seed") if data.get("seed") is not None else 42
         )
         self.validate_scenario(scenario)
         return scenario

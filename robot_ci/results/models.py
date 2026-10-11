@@ -8,6 +8,8 @@ class TestRunResult:
     Designed for extensibility: future milestone fields are Optional
     and do not break existing serialization.
     """
+    __test__ = False
+
     run_id: str
     timestamp: str  # ISO format
     baseline_policy_version: str

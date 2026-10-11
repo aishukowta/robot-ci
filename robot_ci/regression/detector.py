@@ -23,8 +23,9 @@ class RegressionFinding:
 
 class RegressionDetector:
     def __init__(self, config_path: str = "config/regression_thresholds.yaml"):
-        with open(config_path) as f:
-            self.thresholds = yaml.safe_load(f)
+        with open(config_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+            self.thresholds = data if isinstance(data, dict) else {}
     
     def analyze(self, metric_results: List[MetricResult]) -> List[RegressionFinding]:
         findings = []
