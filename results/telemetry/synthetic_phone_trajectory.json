@@ -1,0 +1,868 @@
+{
+  "video_metadata": {
+    "file_path": "tests\\fixtures\\synthetic_phone_recording.mp4",
+    "file_format": ".mp4",
+    "total_frames": 30,
+    "fps": 30.0,
+    "duration_seconds": 1.0,
+    "width": 320,
+    "height": 240,
+    "codec": "FMP4",
+    "is_synthetic": false
+  },
+  "tracker_config": {
+    "color_preset": "red",
+    "hsv_lower": null,
+    "hsv_upper": null,
+    "hsv_lower_2": null,
+    "hsv_upper_2": null,
+    "min_contour_area": 10.0,
+    "max_contour_area": null,
+    "min_circularity": 0.0,
+    "roi": null,
+    "initial_point": null,
+    "search_window_radius": null,
+    "max_jump_pixels": null,
+    "apply_morphology": true,
+    "morph_kernel_size": 3
+  },
+  "summary": {
+    "total_frames": 30,
+    "detected_count": 29,
+    "lost_count": 1,
+    "detection_rate": 0.9667
+  },
+  "coordinate_space": "NORMALIZED_IMAGE",
+  "camera_calibrated": false,
+  "is_synthetic": false,
+  "created_at": "2026-10-11T09:53:05.396502+00:00",
+  "disclaimer": "Visual tracking measurements are extracted in 2D image coordinates (pixel [u, v] and normalized screen-space [u_norm, v_norm]) from an uncalibrated camera recording. These measurements DO NOT represent metric 3D Cartesian coordinates (meters), joint angles, contact forces, or physical robot safety, and are subject to perspective distortion, lens distortion, monocular parallax, camera motion, and visual occlusion.",
+  "notes": null,
+  "observations": [
+    {
+      "frame_index": 0,
+      "timestamp_seconds": 0.0,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        231.87,
+        119.87
+      ],
+      "normalized_coordinates": [
+        0.72459,
+        0.49945
+      ],
+      "confidence": 0.9413,
+      "bounding_box": [
+        224,
+        112,
+        16,
+        16
+      ],
+      "area_pixels": 184.0,
+      "metadata": {
+        "circularity": 0.9021,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 1,
+      "timestamp_seconds": 0.033333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        229.94,
+        133.89
+      ],
+      "normalized_coordinates": [
+        0.71857,
+        0.55789
+      ],
+      "confidence": 0.9335,
+      "bounding_box": [
+        222,
+        126,
+        16,
+        16
+      ],
+      "area_pixels": 182.0,
+      "metadata": {
+        "circularity": 0.8923,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 2,
+      "timestamp_seconds": 0.066667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        225.21,
+        149.07
+      ],
+      "normalized_coordinates": [
+        0.70379,
+        0.62112
+      ],
+      "confidence": 0.9387,
+      "bounding_box": [
+        218,
+        142,
+        16,
+        16
+      ],
+      "area_pixels": 181.5,
+      "metadata": {
+        "circularity": 0.9108,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 3,
+      "timestamp_seconds": 0.1,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        217.89,
+        161.94
+      ],
+      "normalized_coordinates": [
+        0.68092,
+        0.67476
+      ],
+      "confidence": 0.9326,
+      "bounding_box": [
+        210,
+        154,
+        16,
+        16
+      ],
+      "area_pixels": 182.0,
+      "metadata": {
+        "circularity": 0.8923,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 4,
+      "timestamp_seconds": 0.133333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        207.97,
+        173.17
+      ],
+      "normalized_coordinates": [
+        0.64991,
+        0.72154
+      ],
+      "confidence": 0.9199,
+      "bounding_box": [
+        200,
+        165,
+        17,
+        17
+      ],
+      "area_pixels": 183.5,
+      "metadata": {
+        "circularity": 0.8628,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 5,
+      "timestamp_seconds": 0.166667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        195.83,
+        181.92
+      ],
+      "normalized_coordinates": [
+        0.61196,
+        0.758
+      ],
+      "confidence": 0.9308,
+      "bounding_box": [
+        188,
+        174,
+        16,
+        16
+      ],
+      "area_pixels": 185.5,
+      "metadata": {
+        "circularity": 0.8888,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 6,
+      "timestamp_seconds": 0.2,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        181.87,
+        187.87
+      ],
+      "normalized_coordinates": [
+        0.56834,
+        0.78278
+      ],
+      "confidence": 0.9361,
+      "bounding_box": [
+        174,
+        180,
+        16,
+        16
+      ],
+      "area_pixels": 184.0,
+      "metadata": {
+        "circularity": 0.9021,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 7,
+      "timestamp_seconds": 0.233333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        167.13,
+        191.13
+      ],
+      "normalized_coordinates": [
+        0.52229,
+        0.79638
+      ],
+      "confidence": 0.9362,
+      "bounding_box": [
+        160,
+        184,
+        16,
+        16
+      ],
+      "area_pixels": 184.0,
+      "metadata": {
+        "circularity": 0.9021,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 8,
+      "timestamp_seconds": 0.266667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        151.95,
+        191.13
+      ],
+      "normalized_coordinates": [
+        0.47484,
+        0.79636
+      ],
+      "confidence": 0.928,
+      "bounding_box": [
+        144,
+        184,
+        17,
+        16
+      ],
+      "area_pixels": 186.0,
+      "metadata": {
+        "circularity": 0.8828,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 9,
+      "timestamp_seconds": 0.3,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        137.13,
+        187.91
+      ],
+      "normalized_coordinates": [
+        0.42854,
+        0.78295
+      ],
+      "confidence": 0.926,
+      "bounding_box": [
+        130,
+        180,
+        16,
+        17
+      ],
+      "area_pixels": 185.0,
+      "metadata": {
+        "circularity": 0.878,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 10,
+      "timestamp_seconds": 0.333333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        123.87,
+        181.91
+      ],
+      "normalized_coordinates": [
+        0.38709,
+        0.75795
+      ],
+      "confidence": 0.9269,
+      "bounding_box": [
+        116,
+        174,
+        16,
+        17
+      ],
+      "area_pixels": 185.0,
+      "metadata": {
+        "circularity": 0.878,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 11,
+      "timestamp_seconds": 0.366667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        111.13,
+        173.09
+      ],
+      "normalized_coordinates": [
+        0.34729,
+        0.72122
+      ],
+      "confidence": 0.9255,
+      "bounding_box": [
+        104,
+        165,
+        16,
+        17
+      ],
+      "area_pixels": 185.0,
+      "metadata": {
+        "circularity": 0.878,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 12,
+      "timestamp_seconds": 0.4,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        101.09,
+        161.91
+      ],
+      "normalized_coordinates": [
+        0.31591,
+        0.67462
+      ],
+      "confidence": 0.9166,
+      "bounding_box": [
+        93,
+        154,
+        17,
+        17
+      ],
+      "area_pixels": 186.0,
+      "metadata": {
+        "circularity": 0.855,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 13,
+      "timestamp_seconds": 0.433333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        93.98,
+        149.11
+      ],
+      "normalized_coordinates": [
+        0.2937,
+        0.62127
+      ],
+      "confidence": 0.9228,
+      "bounding_box": [
+        86,
+        142,
+        17,
+        16
+      ],
+      "area_pixels": 183.0,
+      "metadata": {
+        "circularity": 0.8685,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 14,
+      "timestamp_seconds": 0.466667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        88.99,
+        134.01
+      ],
+      "normalized_coordinates": [
+        0.27809,
+        0.55838
+      ],
+      "confidence": 0.9075,
+      "bounding_box": [
+        81,
+        126,
+        17,
+        17
+      ],
+      "area_pixels": 182.0,
+      "metadata": {
+        "circularity": 0.8366,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 15,
+      "timestamp_seconds": 0.5,
+      "detection_status": "LOST",
+      "image_coordinates": null,
+      "normalized_coordinates": null,
+      "confidence": 0.0,
+      "bounding_box": null,
+      "area_pixels": 0.0,
+      "metadata": {
+        "reason": "No contours found in threshold mask"
+      }
+    },
+    {
+      "frame_index": 16,
+      "timestamp_seconds": 0.533333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        88.99,
+        104.99
+      ],
+      "normalized_coordinates": [
+        0.27809,
+        0.43745
+      ],
+      "confidence": 0.8879,
+      "bounding_box": [
+        81,
+        97,
+        17,
+        17
+      ],
+      "area_pixels": 182.0,
+      "metadata": {
+        "circularity": 0.8366,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 17,
+      "timestamp_seconds": 0.566667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        93.94,
+        89.89
+      ],
+      "normalized_coordinates": [
+        0.29357,
+        0.37456
+      ],
+      "confidence": 0.9309,
+      "bounding_box": [
+        86,
+        82,
+        16,
+        16
+      ],
+      "area_pixels": 182.0,
+      "metadata": {
+        "circularity": 0.8923,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 18,
+      "timestamp_seconds": 0.6,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        101.07,
+        77.17
+      ],
+      "normalized_coordinates": [
+        0.31584,
+        0.32155
+      ],
+      "confidence": 0.9303,
+      "bounding_box": [
+        94,
+        69,
+        16,
+        17
+      ],
+      "area_pixels": 182.5,
+      "metadata": {
+        "circularity": 0.8862,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 19,
+      "timestamp_seconds": 0.633333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        111.09,
+        65.87
+      ],
+      "normalized_coordinates": [
+        0.34716,
+        0.27445
+      ],
+      "confidence": 0.9261,
+      "bounding_box": [
+        103,
+        58,
+        17,
+        16
+      ],
+      "area_pixels": 185.0,
+      "metadata": {
+        "circularity": 0.878,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 20,
+      "timestamp_seconds": 0.666667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        123.13,
+        57.09
+      ],
+      "normalized_coordinates": [
+        0.38479,
+        0.23788
+      ],
+      "confidence": 0.9264,
+      "bounding_box": [
+        116,
+        49,
+        16,
+        17
+      ],
+      "area_pixels": 185.0,
+      "metadata": {
+        "circularity": 0.878,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 21,
+      "timestamp_seconds": 0.7,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        137.13,
+        51.13
+      ],
+      "normalized_coordinates": [
+        0.42854,
+        0.21305
+      ],
+      "confidence": 0.9361,
+      "bounding_box": [
+        130,
+        44,
+        16,
+        16
+      ],
+      "area_pixels": 184.0,
+      "metadata": {
+        "circularity": 0.9021,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 22,
+      "timestamp_seconds": 0.733333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        151.87,
+        47.87
+      ],
+      "normalized_coordinates": [
+        0.47459,
+        0.19945
+      ],
+      "confidence": 0.9362,
+      "bounding_box": [
+        144,
+        40,
+        16,
+        16
+      ],
+      "area_pixels": 184.0,
+      "metadata": {
+        "circularity": 0.9021,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 23,
+      "timestamp_seconds": 0.766667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        167.09,
+        47.91
+      ],
+      "normalized_coordinates": [
+        0.52216,
+        0.19962
+      ],
+      "confidence": 0.9163,
+      "bounding_box": [
+        159,
+        40,
+        17,
+        17
+      ],
+      "area_pixels": 186.0,
+      "metadata": {
+        "circularity": 0.855,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 24,
+      "timestamp_seconds": 0.8,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        181.91,
+        51.09
+      ],
+      "normalized_coordinates": [
+        0.56846,
+        0.21288
+      ],
+      "confidence": 0.9164,
+      "bounding_box": [
+        174,
+        43,
+        17,
+        17
+      ],
+      "area_pixels": 186.0,
+      "metadata": {
+        "circularity": 0.855,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 25,
+      "timestamp_seconds": 0.833333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        195.91,
+        57.09
+      ],
+      "normalized_coordinates": [
+        0.61221,
+        0.23788
+      ],
+      "confidence": 0.9163,
+      "bounding_box": [
+        188,
+        49,
+        17,
+        17
+      ],
+      "area_pixels": 186.0,
+      "metadata": {
+        "circularity": 0.855,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 26,
+      "timestamp_seconds": 0.866667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        207.91,
+        65.87
+      ],
+      "normalized_coordinates": [
+        0.64971,
+        0.27445
+      ],
+      "confidence": 0.9265,
+      "bounding_box": [
+        200,
+        58,
+        17,
+        16
+      ],
+      "area_pixels": 185.0,
+      "metadata": {
+        "circularity": 0.878,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 27,
+      "timestamp_seconds": 0.9,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        217.87,
+        77.09
+      ],
+      "normalized_coordinates": [
+        0.68084,
+        0.32122
+      ],
+      "confidence": 0.9263,
+      "bounding_box": [
+        210,
+        69,
+        16,
+        17
+      ],
+      "area_pixels": 185.0,
+      "metadata": {
+        "circularity": 0.878,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 28,
+      "timestamp_seconds": 0.933333,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        225.02,
+        89.89
+      ],
+      "normalized_coordinates": [
+        0.70318,
+        0.37456
+      ],
+      "confidence": 0.9228,
+      "bounding_box": [
+        217,
+        82,
+        17,
+        16
+      ],
+      "area_pixels": 183.0,
+      "metadata": {
+        "circularity": 0.8685,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    },
+    {
+      "frame_index": 29,
+      "timestamp_seconds": 0.966667,
+      "detection_status": "DETECTED",
+      "image_coordinates": [
+        230.01,
+        104.99
+      ],
+      "normalized_coordinates": [
+        0.71878,
+        0.43745
+      ],
+      "confidence": 0.9075,
+      "bounding_box": [
+        222,
+        97,
+        17,
+        17
+      ],
+      "area_pixels": 182.0,
+      "metadata": {
+        "circularity": 0.8366,
+        "frame_size": [
+          320,
+          240
+        ]
+      }
+    }
+  ]
+}

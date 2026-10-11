@@ -1,0 +1,106 @@
+{
+  "report_id": "efda9240",
+  "comparison_mode": "CALIBRATED_PROJECTION",
+  "scenario_id": "reach_simple",
+  "sim_policy_id": "baseline",
+  "physical_controller_id": "baseline",
+  "comparison_type": "matched_policy_verification",
+  "robot_model": "unknown_robot",
+  "coordinate_system": "camera_image_pixel_space",
+  "units": "pixels (px)",
+  "metrics": {
+    "tracking_coverage": 0.9667,
+    "video_frames_total": 30,
+    "video_frames_detected": 29,
+    "video_duration_seconds": 1.0,
+    "sim_duration_seconds": 0.7,
+    "timing_difference_seconds": 0.3,
+    "video_path_length": 436.8995,
+    "sim_path_length": 68.843,
+    "mean_trajectory_deviation": 81.4558,
+    "rms_trajectory_deviation": 86.5256,
+    "max_trajectory_deviation": 113.9621,
+    "dtw_cost": 1903.8317,
+    "dtw_average_step_distance": 65.6494,
+    "resampled_points_count": 50
+  },
+  "alignment_details": {
+    "method": "normalized_progress_resampling",
+    "resampled_points_count": 50,
+    "camera_model": "synthetic_side_view",
+    "focal_lengths": [
+      288.0,
+      288.0
+    ],
+    "principal_point": [
+      160.0,
+      120.0
+    ],
+    "image_dimensions": [
+      320,
+      240
+    ],
+    "points_in_front_of_camera": "7/7"
+  },
+  "provenance": {
+    "video_file": "tests\\fixtures\\synthetic_phone_recording.mp4",
+    "video_source_is_synthetic": false,
+    "sim_run_id": "cf59131d",
+    "sim_backend": "pybullet",
+    "sim_seed": 42,
+    "sim_success": true,
+    "sim_collision_count": 0
+  },
+  "calibration_metadata": {
+    "fx": 288.0,
+    "fy": 288.0,
+    "cx": 160.0,
+    "cy": 120.0,
+    "image_width": 320,
+    "image_height": 240,
+    "rotation_matrix": [
+      [
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "translation_vector": [
+      0.0,
+      0.25,
+      1.2
+    ],
+    "distortion_coefficients": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "camera_model_name": "synthetic_side_view",
+    "calibration_date": null,
+    "notes": "Synthetic test calibration fixture"
+  },
+  "warnings": [],
+  "unavailable_metrics": [
+    "joint_angle_error (requires internal robot encoder/joint-state telemetry)",
+    "3d_cartesian_error_meters (monocular video lacks metric depth ground truth)",
+    "physical_contact_forces (requires 6-axis F/T or tactile sensor hardware)",
+    "physical_collision_count (requires contact switches or physical instrumentation)",
+    "physical_task_success_confirmation (sub-millimeter tolerance unconfirmable via monocular video)"
+  ],
+  "disclaimers": [
+    "CALIBRATED PROJECTION: Simulated 3D positions are projected into camera pixel space using verified pinhole camera calibration. Metric errors are reported in 2D image pixels (px), NOT 3D meters. Pixel reprojection error is sensitive to camera extrinsics and focal length."
+  ],
+  "created_at": "2026-10-11T15:35:23.884100+00:00"
+}

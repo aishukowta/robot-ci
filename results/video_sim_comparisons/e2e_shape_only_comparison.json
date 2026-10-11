@@ -1,0 +1,83 @@
+{
+  "report_id": "48e9ddeb",
+  "comparison_mode": "SHAPE_ONLY_2D",
+  "scenario_id": "reach_simple",
+  "sim_policy_id": "baseline",
+  "physical_controller_id": "human_teleop",
+  "comparison_type": "cross_controller_behavioural_comparison",
+  "robot_model": "unknown_robot",
+  "coordinate_system": "normalized_screen_space",
+  "units": "normalized_units (dimensionless)",
+  "metrics": {
+    "tracking_coverage": 0.9667,
+    "video_frames_total": 30,
+    "video_frames_detected": 29,
+    "video_duration_seconds": 1.0,
+    "sim_duration_seconds": 0.7,
+    "timing_difference_seconds": 0.3,
+    "video_path_length": 1.7588,
+    "sim_path_length": 1.4182,
+    "mean_trajectory_deviation": 0.2687,
+    "rms_trajectory_deviation": 0.328,
+    "max_trajectory_deviation": 0.8065,
+    "dtw_cost": 13.3195,
+    "dtw_average_step_distance": 0.2612,
+    "resampled_points_count": 50
+  },
+  "alignment_details": {
+    "method": "normalized_progress_resampling_with_2d_procrustes",
+    "projection_plane": "xy",
+    "sim_normalization_bounds": {
+      "min": [
+        0.3,
+        -0.0
+      ],
+      "max": [
+        0.4728,
+        0.1734
+      ]
+    },
+    "procrustes_transform": {
+      "source_centroid": [
+        0.5031,
+        0.4984
+      ],
+      "target_centroid": [
+        0.6042,
+        0.571
+      ],
+      "translation": [
+        0.1011,
+        0.0726
+      ],
+      "rotation_degrees": -147.43,
+      "scale_factor": 1.106
+    },
+    "resampled_points_count": 50
+  },
+  "provenance": {
+    "video_file": "tests\\fixtures\\synthetic_phone_recording.mp4",
+    "video_source_is_synthetic": false,
+    "sim_run_id": "f0a0cc16",
+    "sim_backend": "pybullet",
+    "sim_seed": 42,
+    "sim_success": true,
+    "sim_collision_count": 0
+  },
+  "calibration_metadata": null,
+  "warnings": [
+    "Cross-controller behavioural comparison: physical controller 'human_teleop' differs from simulation policy 'baseline'."
+  ],
+  "unavailable_metrics": [
+    "joint_angle_error (requires internal robot encoder/joint-state telemetry)",
+    "3d_cartesian_error_meters (monocular video lacks metric depth ground truth)",
+    "physical_contact_forces (requires 6-axis F/T or tactile sensor hardware)",
+    "physical_collision_count (requires contact switches or physical instrumentation)",
+    "physical_task_success_confirmation (sub-millimeter tolerance unconfirmable via monocular video)"
+  ],
+  "disclaimers": [
+    "Visual tracking measurements are extracted in 2D image coordinates (pixel [u, v] and normalized screen-space [u_norm, v_norm]) from an uncalibrated camera recording. These measurements DO NOT represent metric 3D Cartesian coordinates (meters), joint angles, contact forces, or physical robot safety, and are subject to perspective distortion, lens distortion, monocular parallax, camera motion, and visual occlusion.",
+    "SHAPE-ONLY COMPARISON: Camera calibration is unavailable. Trajectories are normalized to [0, 1] in screen space and aligned by geometric shape. Deviations are strictly dimensionless normalized units, NOT physical meters and NOT calibrated camera pixels."
+  ],
+  "created_at": "2026-10-11T15:34:47.159657+00:00"
+}

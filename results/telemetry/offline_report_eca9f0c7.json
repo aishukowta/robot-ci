@@ -1,0 +1,71 @@
+{
+  "report_id": "eca9f0c7",
+  "created_at": "2026-10-11T09:22:35.317930+00:00",
+  "telemetry_source": "synthetic_reach_log_01",
+  "input_file": "tests\\fixtures\\synthetic_telemetry.json",
+  "provenance": {
+    "data_origin": "synthetic",
+    "source_id": "synthetic_reach_log_01",
+    "recording_format": "json",
+    "is_synthetic": true,
+    "recorded_at": "2026-10-11T12:00:00.000Z",
+    "time_basis": "UTC_EPOCH_SECONDS",
+    "notes": "Clearly labeled synthetic telemetry fixture for offline evaluation and trajectory comparison demonstrations."
+  },
+  "sample_count": 4,
+  "time_range": {
+    "start_time": 0.0,
+    "end_time": 0.3,
+    "duration_seconds": 0.3,
+    "time_basis": "UTC_EPOCH_SECONDS"
+  },
+  "available_fields": [
+    "timestamp",
+    "ee_position",
+    "joint_positions",
+    "action",
+    "events"
+  ],
+  "missing_fields": [],
+  "validation_summary": {
+    "is_valid": true,
+    "record_count": 4,
+    "duration_seconds": 0.3,
+    "has_ee_positions": true,
+    "has_joint_positions": true,
+    "has_actions": true,
+    "has_events": true,
+    "errors": [],
+    "warnings": []
+  },
+  "supported_metrics": [
+    "trajectory_deviation",
+    "completion_time",
+    "action_difference",
+    "collision_count",
+    "success_rate"
+  ],
+  "unsupported_metrics": [
+    "reward_difference"
+  ],
+  "unsupported_reasons": {
+    "reward_difference": "Rewards are synthetic simulation artifacts and are not present in recorded telemetry."
+  },
+  "trajectory_comparison": {
+    "sim_points_count": 6,
+    "recorded_points_count": 4,
+    "rms_euclidean_distance": 0.165396,
+    "mean_euclidean_distance": 0.164878,
+    "max_euclidean_distance": 0.2,
+    "dtw_cost": 0.986532,
+    "dtw_average_distance": 0.164422,
+    "alignment_method": "normalized_path_progress_resampling",
+    "resampled_points_count": 100,
+    "disclaimer": "Trajectory comparison metrics quantify kinematic and geometric similarity only. This comparison does NOT prove physical robot safety, collision avoidance, dynamical feasibility, or successful sim-to-real transfer."
+  },
+  "reference_source": "sim:mock:reach_simple:baseline",
+  "notes": null,
+  "is_synthetic": true,
+  "is_live_execution": false,
+  "disclaimer": "Trajectory comparison metrics quantify kinematic and geometric similarity only. This comparison does NOT prove physical robot safety, collision avoidance, dynamical feasibility, or successful sim-to-real transfer."
+}
