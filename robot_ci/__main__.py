@@ -92,7 +92,13 @@ def main():
     hw_parser.add_argument("--output", default=None, help="Output path for readiness report JSON")
     hw_parser.add_argument("--strict", action="store_true", help="Exit with non-zero code if status is not READY")
     
+    # Handwriting robot commands (writing-*)
+    from robot_ci.writing.cli import add_writing_commands, handle_writing_command
+    add_writing_commands(subparsers)
+
     args = parser.parse_args()
+    if handle_writing_command(args):
+        return
 
     
     if args.command == "run":

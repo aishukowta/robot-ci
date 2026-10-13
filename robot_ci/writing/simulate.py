@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import math
 import time
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -321,7 +322,7 @@ class PyBulletPenSimulator:
         p.setPhysicsEngineParameter(numSolverIterations=50, deterministicOverlappingPairs=1, physicsClientId=cid)
         if self.gui:
             p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0, physicsClientId=cid)
-            p.resetDebugVisualizerCamera(cameraDistance=0.8, cameraYaw=90, cameraPitch=-60,
+            p.resetDebugVisualizerCamera(cameraDistance=0.78, cameraYaw=0, cameraPitch=-68,
                                          cameraTargetPosition=[self.params.page_center_world[0], 0.0, 0.05],
                                          physicsClientId=cid)
         p.loadURDF("plane.urdf", physicsClientId=cid)
@@ -380,7 +381,25 @@ class PyBulletPenSimulator:
         # Pen held vertically (tip pointing down): the grasp point sits pen_length above the tip
         return [tip_world[0], tip_world[1], tip_world[2] + self.params.pen_length_m]
 
-    def execute(self, plan: PenPlan, seed: int = 0, ink_color=(0.05, 0.15, 0.85)) -> PenExecution:
+    def _camera(self, width: int, height: int):
+        p, cid = self._p, self._cid
+        cx = self.params.page_center_world[0]
+        view = p.computeViewMatrixFromYawPitchRoll([cx - 0.02, 0.03, 0.06], 0.6, 0, -68, 0, 2, physicsClientId=cid)
+        proj = p.computeProjectionMatrixFOV(50, width / float(height), 0.05, 3.0, physicsClientId=cid)
+        V = np.asarray(view).reshape(4, 4).T
+        P = np.asarray(proj).reshape(4, 4).T
+        return view, proj, P @ V
+
+    @staticmethod
+    def _project(PV: np.ndarray, pts_world: np.ndarray, width: int, height: int) -> np.ndarray:
+        hom = np.c_[pts_world, np.ones(len(pts_world))] @ PV.T
+        ndc = hom[:, :3] / hom[:, 3:4]
+        return np.c_[(ndc[:, 0] + 1) * 0.5 * width, (1 - ndc[:, 1]) * 0.5 * height]
+
+    def execute(self, plan: PenPlan, seed: int = 0, ink_color=(0.05, 0.15, 0.85),
+                record_path: Optional[str] = None, record_fps: float = 12.0,
+                record_size: tuple = (640, 480)) -> PenExecution:
+        """Execute a plan. With record_path, an off-screen MP4 of the arm writing is saved."""
         W, H = plan.page_width_mm, plan.page_height_mm
         self._setup(W, H)
         p, cid, prm = self._p, self._cid, self.params
@@ -408,6 +427,17 @@ class PyBulletPenSimulator:
         prev_in_violation = False
         prev_contact = False
         last_ink = None
+        writer = None
+        if record_path:
+            import cv2
+            Path(record_path).parent.mkdir(parents=True, exist_ok=True)
+            rw, rh = record_size
+            view, proj, PV = self._camera(rw, rh)
+            # Side camera (the arm stays out of the way); frames are rotated 90 deg so writing reads upright
+            writer = cv2.VideoWriter(str(record_path), cv2.VideoWriter_fourcc(*"mp4v"), record_fps, (rh, rw))
+            frame_every = max(1, int(round(1.0 / (record_fps * dt))))
+            ink_world: List[List[np.ndarray]] = []
+            pen_was_down = False
         for i in range(n):
             z_cmd = cmd.z[i] - prm.pen_press_mm * max(0.0, 1.0 - cmd.z[i] / PEN_UP_HEIGHT_MM)
             target = self.page_to_world(cmd.xy[i][0], cmd.xy[i][1], z_cmd, W, H)
@@ -440,6 +470,15 @@ class PyBulletPenSimulator:
                 contact_events += 1
             prev_contact = contact
 
+            if writer is not None:
+                down_now = z_mm <= PEN_CONTACT_TOLERANCE_MM
+                if down_now:
+                    if not pen_was_down:
+                        ink_world.append([])
+                    ink_world[-1].append(np.asarray(self.page_to_world(x_mm, y_mm, 0.0, W, H)))
+                pen_was_down = down_now
+                if i % frame_every == 0 or i == n - 1:
+                    self._write_frame(writer, view, proj, PV, record_size, ink_world, ink_color, i * dt)
             if self.gui:
                 if z_mm <= PEN_CONTACT_TOLERANCE_MM:
                     here = self.page_to_world(x_mm, y_mm, 0.2, W, H)
@@ -450,6 +489,11 @@ class PyBulletPenSimulator:
                     last_ink = None
                 if self.realtime:
                     time.sleep(dt)
+
+        if writer is not None:
+            for _ in range(int(record_fps)):  # hold the final frame for one second
+                self._write_frame(writer, view, proj, PV, record_size, ink_world, ink_color, n * dt)
+            writer.release()
 
         pen_down = zz <= PEN_CONTACT_TOLERANCE_MM
         safety = _safety_from_tracking(xy, cmd.xy, pen_down, plan, dt, prm.workspace_margin_mm,
@@ -462,6 +506,22 @@ class PyBulletPenSimulator:
                             cmd.t.copy(), xy, zz, pen_down, cmd.xy.copy(), safety,
                             ["PyBullet Franka Panda stand-in arm, IK + velocity-limited joint servo; "
                              "virtual 10 cm pen held vertically in the gripper."])
+
+    def _write_frame(self, writer, view, proj, PV, size, ink_world, ink_color, t_s) -> None:
+        import cv2
+        p = self._p
+        w, h = size
+        img = p.getCameraImage(w, h, view, proj, renderer=p.ER_TINY_RENDERER, physicsClientId=self._cid)[2]
+        frame = cv2.cvtColor(np.reshape(np.asarray(img, dtype=np.uint8), (h, w, 4))[:, :, :3], cv2.COLOR_RGB2BGR)
+        col = tuple(int(255 * c) for c in ink_color[::-1])
+        for stroke in ink_world:
+            if len(stroke) >= 2:
+                px = self._project(PV, np.asarray(stroke), w, h).astype(np.int32).reshape(-1, 1, 2)
+                cv2.polylines(frame, [px], False, col, 2, cv2.LINE_AA)
+        frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        cv2.putText(frame, f"Robot CI | PyBullet | t = {t_s:5.2f} s", (10, 22), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    (30, 30, 30), 1, cv2.LINE_AA)
+        writer.write(frame)
 
     def close(self) -> None:
         if self._p is not None and self._cid is not None and self._p.isConnected(self._cid):
