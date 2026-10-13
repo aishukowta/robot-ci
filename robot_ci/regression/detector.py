@@ -26,6 +26,29 @@ class RegressionDetector:
         with open(config_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
             self.thresholds = data if isinstance(data, dict) else {}
+        self._validate_config(config_path)
+
+    _REQUIRED_KEYS = ("threshold", "direction", "comparison", "severity_levels")
+
+    def _validate_config(self, config_path: str) -> None:
+        """Fail early with a clear message instead of a KeyError mid-run."""
+        for metric, cfg in self.thresholds.items():
+            if not isinstance(cfg, dict):
+                raise ValueError(f"{config_path}: entry '{metric}' must be a mapping.")
+            missing = [k for k in self._REQUIRED_KEYS if k not in cfg]
+            if missing:
+                raise ValueError(f"{config_path}: metric '{metric}' is missing keys {missing}.")
+            if cfg["direction"] not in ("increase", "decrease", "monitor"):
+                raise ValueError(f"{config_path}: metric '{metric}' has invalid direction '{cfg['direction']}'.")
+            if cfg["comparison"] not in ("absolute", "relative"):
+                raise ValueError(f"{config_path}: metric '{metric}' has invalid comparison '{cfg['comparison']}'.")
+            levels = cfg["severity_levels"]
+            try:
+                minor, major, critical = float(levels["minor"]), float(levels["major"]), float(levels["critical"])
+            except (KeyError, TypeError, ValueError):
+                raise ValueError(f"{config_path}: metric '{metric}' needs numeric severity_levels minor/major/critical.")
+            if not (minor <= major <= critical):
+                raise ValueError(f"{config_path}: metric '{metric}' severity levels must satisfy minor <= major <= critical.")
     
     def analyze(self, metric_results: List[MetricResult]) -> List[RegressionFinding]:
         findings = []

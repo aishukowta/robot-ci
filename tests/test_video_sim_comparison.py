@@ -266,10 +266,13 @@ def test_calibrated_projection_mode(sample_video_trajectory, sample_sim_trajecto
         mode=ComparisonMode.CALIBRATED_PROJECTION,
         physical_controller_id="baseline",
         robot_model="ur5e",
+        physical_executed_by_robot_ci_policy=True,
     )
 
     assert report.comparison_mode == ComparisonMode.CALIBRATED_PROJECTION
     assert report.comparison_type == "matched_policy_verification"
+    assert report.provenance["matched_policy_claim"] == "user_declared_unverified"
+    assert report.provenance["calibration_source"] == "synthetic_fixture"
     assert report.coordinate_system == "camera_image_pixel_space"
     assert report.units == "pixels (px)"
     assert report.calibration_metadata is not None
@@ -491,3 +494,77 @@ def test_provenance_distinguishes_synthetic_vs_real(sample_sim_trajectory):
 
     report_real = compare_video_to_simulation(real_res, sample_sim_trajectory)
     assert report_real.provenance["video_source_is_synthetic"] is False
+
+
+# ---------------------------------------------------------------------------
+# Audit fixes: explicit same-policy claim and shape-only geometry
+# ---------------------------------------------------------------------------
+
+def test_matching_controller_name_alone_is_not_matched_policy(sample_video_trajectory, sample_sim_trajectory):
+    report = compare_video_to_simulation(
+        video_trajectory=sample_video_trajectory,
+        sim_trajectory=sample_sim_trajectory,
+        physical_controller_id="baseline",
+    )
+    assert report.comparison_type == "cross_controller_behavioural_comparison"
+    assert report.provenance["matched_policy_claim"] == "none"
+
+
+def _video_from_points(points_norm, width=640, height=480):
+    from robot_ci.vision.models import (
+        VideoTrajectoryResult, VideoMetadata, TrackerConfig, VideoFrameObservation, DetectionStatus,
+    )
+    obs = []
+    for i, (u, v) in enumerate(points_norm):
+        obs.append(VideoFrameObservation(
+            frame_index=i, timestamp_seconds=i / 30.0, detection_status=DetectionStatus.DETECTED,
+            image_coordinates=(u * width, v * height), normalized_coordinates=(float(u), float(v)), confidence=1.0,
+        ))
+    meta = VideoMetadata(file_path="results/videos/lab.mp4", file_format=".mp4", total_frames=len(obs),
+                         fps=30.0, duration_seconds=len(obs) / 30.0, width=width, height=height)
+    return VideoTrajectoryResult(video_metadata=meta, tracker_config=TrackerConfig(), observations=obs,
+                                 total_frames=len(obs), detected_count=len(obs), lost_count=0, detection_rate=1.0,
+                                 data_source="handheld_marker_recording")
+
+
+def _l_shaped_sim():
+    from robot_ci.vision.sim_extractor import SimulatedTrajectoryResult
+    xs = np.r_[np.linspace(0.3, 0.6, 20), np.full(20, 0.6)]
+    zs = np.r_[np.full(20, 0.2), np.linspace(0.2, 0.35, 20)]
+    ee = np.c_[xs, np.zeros(40), zs]
+    return SimulatedTrajectoryResult(run_id="t", scenario_id="reach_simple", policy_id="baseline",
+                                     policy_version="v", simulator_backend="pybullet", seed=0, total_steps=39,
+                                     duration_seconds=1.95, success=True, collision_count=0, ee_positions=ee,
+                                     timesteps=list(range(40)), timestamps=[i * 0.05 for i in range(40)], events=[])
+
+
+def test_side_view_video_matches_sim_with_v_up():
+    """A perfect side-view recording (image v points down) must match the sim path."""
+    sim = _l_shaped_sim()
+    x = sim.ee_positions[:, 0]; z = sim.ee_positions[:, 2]
+    u = 0.3 + (x - 0.3) * 0.8     # occupies a sub-region of the frame
+    v = 0.7 - (z - 0.2) * 0.8     # image v grows downwards
+    video = _video_from_points(np.c_[u, v])
+    report = compare_video_to_simulation(video, sim, shape_projection_plane="xz", image_axes="v_up")
+    assert report.metrics["rms_trajectory_deviation"] < 0.02
+    assert report.metrics["raw_rms_trajectory_deviation"] < 0.02
+    assert not any("handedness" in w for w in report.warnings)
+
+
+def test_wrong_image_axes_triggers_handedness_warning():
+    sim = _l_shaped_sim()
+    x = sim.ee_positions[:, 0]; z = sim.ee_positions[:, 2]
+    video = _video_from_points(np.c_[0.3 + (x - 0.3) * 0.8, 0.7 - (z - 0.2) * 0.8])
+    report = compare_video_to_simulation(video, sim, shape_projection_plane="xz", image_axes="v_down")
+    assert any("handedness" in w for w in report.warnings)
+    assert report.alignment_details["reflection_check"]["aligned_rms_with_reflection"] < 0.02
+
+
+def test_pybullet_sim_time_base_is_0_05s_per_step():
+    """Audit B3: PyBullet runs 12 physics steps at 240 Hz per policy step."""
+    from robot_ci.simulation.pybullet_sim import PyBulletSimulator
+    from robot_ci.vision.sim_extractor import extract_simulated_trajectory
+    assert abs(PyBulletSimulator().control_dt - 0.05) < 1e-12
+    traj = extract_simulated_trajectory("baseline", "reach_simple", "pybullet")
+    assert abs(traj.duration_seconds - traj.total_steps * 0.05) < 1e-9
+    assert abs(traj.timestamps[1] - traj.timestamps[0] - 0.05) < 1e-9

@@ -66,6 +66,39 @@ class TrackingError(VisionError):
     pass
 
 
+# ---------------------------------------------------------------------------
+# Data-source provenance (explicit, never inferred as "physical" by default)
+# ---------------------------------------------------------------------------
+DATA_SOURCE_SYNTHETIC = "synthetic_fixture"
+DATA_SOURCE_ROBOT = "robot_phone_recording"
+DATA_SOURCE_HANDHELD = "handheld_marker_recording"
+DATA_SOURCE_PERTURBED_SIM = "controlled_sim_perturbation"
+DATA_SOURCE_UNSPECIFIED = "unspecified"
+VALID_DATA_SOURCES = (
+    DATA_SOURCE_SYNTHETIC,
+    DATA_SOURCE_ROBOT,
+    DATA_SOURCE_HANDHELD,
+    DATA_SOURCE_PERTURBED_SIM,
+    DATA_SOURCE_UNSPECIFIED,
+)
+
+
+def resolve_data_source(path: Optional[Union[str, Path]], declared: Optional[str], is_synthetic: bool = False) -> str:
+    """Resolve the provenance label for a recording.
+
+    Fixtures under tests/fixtures or any file whose name contains 'synthetic'
+    are ALWAYS labelled synthetic, regardless of what the caller declared.
+    """
+    path_str = str(path or "").replace("\\", "/").lower()
+    if is_synthetic or "synthetic" in Path(path_str).name or "tests/fixtures/" in path_str:
+        return DATA_SOURCE_SYNTHETIC
+    if declared is None:
+        return DATA_SOURCE_UNSPECIFIED
+    if declared not in VALID_DATA_SOURCES:
+        raise ValueError(f"Unknown data source '{declared}'. Valid: {list(VALID_DATA_SOURCES)}")
+    return declared
+
+
 @dataclass
 class VideoFrameObservation:
     """A single observation extracted from a video frame.
@@ -240,9 +273,17 @@ class VideoTrajectoryResult:
     coordinate_space: str = CoordinateSpace.NORMALIZED_IMAGE.value
     disclaimer: str = UNCALIBRATED_CAMERA_DISCLAIMER
     notes: Optional[str] = None
+    data_source: str = DATA_SOURCE_UNSPECIFIED
+
+    def __post_init__(self) -> None:
+        if self.is_synthetic or self.video_metadata.is_synthetic:
+            self.data_source = DATA_SOURCE_SYNTHETIC
+        if self.data_source == DATA_SOURCE_SYNTHETIC:
+            self.is_synthetic = True
 
     def to_dict(self) -> Dict[str, Any]:
         return {
+            "data_source": self.data_source,
             "video_metadata": self.video_metadata.to_dict(),
             "tracker_config": self.tracker_config.to_dict(),
             "summary": {
@@ -332,6 +373,7 @@ class VideoTrajectoryResult:
             coordinate_space=data.get("coordinate_space", CoordinateSpace.NORMALIZED_IMAGE.value),
             disclaimer=data.get("disclaimer", UNCALIBRATED_CAMERA_DISCLAIMER),
             notes=data.get("notes"),
+            data_source=data.get("data_source", DATA_SOURCE_UNSPECIFIED),
         )
 
     @classmethod

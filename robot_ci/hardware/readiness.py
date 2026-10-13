@@ -42,7 +42,7 @@ def check_python_packages() -> Dict[str, Dict[str, Any]]:
     """Check availability and versions of core and optional packages."""
     package_names = [
         ("numpy", True, "Kinematics, numerical matrices, and action vectors"),
-        ("torch", False, "Neural network policy execution and inference"),
+        ("torch", False, "Optional; only used by the untrained placeholder network hook in the demo policies"),
         ("cv2", False, "Computer vision trajectory extraction from video"),
         ("mcap", False, "Offline MCAP telemetry recording and playback"),
         ("rclpy", False, "ROS 2 Python client library (physical hardware runtime)"),
@@ -208,6 +208,11 @@ def audit_hardware_readiness(
         and active_config.robot_name not in ("unconfigured_arm", "unknown_robot", "none", "placeholder")
     )
     report.is_robot_model_configured = is_model_valid
+    if getattr(active_config, "is_example", False):
+        blockers.append(
+            "Hardware config is an EXAMPLE file (is_example=true). Example values are not the lab robot's "
+            "parameters and can never authorise physical execution."
+        )
     if not is_model_valid:
         blockers.append(
             f"Robot model is unconfigured (found: '{active_config.robot_name}'). "
@@ -306,6 +311,11 @@ def audit_hardware_readiness(
             )
         else:
             # Real transport (e.g. ROS 2 or custom network socket)
+            if getattr(transport, "is_scaffold", False) is True:
+                blockers.append(
+                    "Configured transport is a scaffold without implemented publishers/subscribers; "
+                    "it cannot read state or command a robot."
+                )
             if isinstance(transport, ROS2RobotTransport):
                 if not report.ros2_environment["available"]:
                     blockers.append(
@@ -338,6 +348,11 @@ def audit_hardware_readiness(
 
     if not transport_has_safe_stop:
         blockers.append("Transport does not support the request_safe_stop() software stop interface.")
+    elif transport is not None and not report.is_fake_transport and not transport_estop_confirmed:
+        blockers.append(
+            "Hardware emergency stop (STO) is not confirmed for a real transport. An independently wired and "
+            "verified E-stop is mandatory before any physical motion."
+        )
     else:
         warnings.append(
             "Software stop (request_safe_stop) is available, but hardware-enforced Safe Torque Off (STO) "
@@ -424,10 +439,10 @@ def format_readiness_report_text(report: HardwareReadinessReport) -> str:
 
     # Section 4: Safety Configuration & Stop Mechanisms
     lines.append("\n  4. SAFETY CONFIGURATION & LIMITS:")
-    lines.append(f"     Safety Config Status: {'VERIFIED' if report.safety_configuration_verified else 'INCOMPLETE / INVALID'}")
-    lines.append(f"     Joint Limits:         {'VERIFIED' if report.joint_limits_verified else 'NOT VERIFIED'}")
-    lines.append(f"     Workspace Bounds:     {'VERIFIED' if report.workspace_bounds_verified else 'NOT VERIFIED'}")
-    lines.append(f"     Max Step Size:        {'VERIFIED' if report.max_step_size_verified else 'NOT VERIFIED'}")
+    lines.append(f"     Safety Config Status: {'PRESENT (format-checked only, not physically verified)' if report.safety_configuration_verified else 'INCOMPLETE / INVALID'}")
+    lines.append(f"     Joint Limits:         {'PRESENT (format-checked only)' if report.joint_limits_verified else 'MISSING / INVALID'}")
+    lines.append(f"     Workspace Bounds:     {'PRESENT (format-checked only)' if report.workspace_bounds_verified else 'MISSING / INVALID'}")
+    lines.append(f"     Max Step Size:        {'PRESENT (format-checked only)' if report.max_step_size_verified else 'MISSING / INVALID'}")
     lines.append(f"     Enforce Workspace:    {report.enforce_workspace}")
     lines.append(f"     Enforce Joint Limits: {report.enforce_joint_limits}")
 
@@ -445,7 +460,7 @@ def format_readiness_report_text(report: HardwareReadinessReport) -> str:
         for i, b in enumerate(report.blockers, 1):
             lines.append(f"    [{i}] [BLOCKER] {b}")
     else:
-        lines.append("  BLOCKERS: None (All prerequisites satisfied)")
+        lines.append("  BLOCKERS: None found by these software checks (this is NOT proof of physical safety)")
 
     # Section 6: Warnings
     if report.warnings:

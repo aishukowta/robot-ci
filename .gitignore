@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .streamlit/secrets.toml
 results/*.json
+*.egg-info/
+results/writing/
+results/hardware_readiness/
+results/uploads/

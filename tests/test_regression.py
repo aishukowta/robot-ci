@@ -142,3 +142,22 @@ def test_regression_finding_serialization():
     reconstructed = RegressionFinding.from_dict(d)
     assert reconstructed == finding
 
+
+
+def test_threshold_config_validation_rejects_bad_direction(tmp_path):
+    import pytest
+    from robot_ci.regression.detector import RegressionDetector
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("success_rate:\n  threshold: 0.1\n  direction: sideways\n  comparison: absolute\n"
+                   "  severity_levels: {minor: 0.1, major: 0.2, critical: 0.5}\n")
+    with pytest.raises(ValueError, match="invalid direction"):
+        RegressionDetector(config_path=str(bad))
+
+
+def test_threshold_config_validation_rejects_missing_keys(tmp_path):
+    import pytest
+    from robot_ci.regression.detector import RegressionDetector
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("success_rate:\n  threshold: 0.1\n")
+    with pytest.raises(ValueError, match="missing keys"):
+        RegressionDetector(config_path=str(bad))

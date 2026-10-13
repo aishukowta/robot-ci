@@ -14,6 +14,8 @@ import math
 import numpy as np
 
 from .models import (
+    resolve_data_source,
+    DATA_SOURCE_SYNTHETIC,
     DetectionStatus,
     VideoFrameObservation,
     VideoMetadata,
@@ -34,6 +36,7 @@ def extract_trajectory_from_video(
     config: Optional[TrackerConfig] = None,
     is_synthetic: bool = False,
     notes: Optional[str] = None,
+    data_source: Optional[str] = None,
 ) -> VideoTrajectoryResult:
     """Analyze a prerecorded video and extract end-effector 2D image coordinates.
     
@@ -42,6 +45,10 @@ def extract_trajectory_from_video(
         config: Tracker configuration settings (color presets, HSV bounds, ROI).
         is_synthetic: Flag indicating whether video is synthetic/simulated.
         notes: Optional user notes or recording description.
+        data_source: Declared provenance (see vision.models.VALID_DATA_SOURCES).
+            Fixtures and files named '*synthetic*' are always forced to
+            'synthetic_fixture'. Undeclared sources become 'unspecified',
+            which the diagnosis engine never treats as physical evidence.
     
     Returns:
         VideoTrajectoryResult with per-frame observations and detection statistics.
@@ -55,6 +62,9 @@ def extract_trajectory_from_video(
     path = Path(video_path)
     if not path.exists():
         raise FileNotFoundError(f"Video file not found: {path}")
+
+    resolved_source = resolve_data_source(path, data_source, is_synthetic)
+    is_synthetic = resolved_source == DATA_SOURCE_SYNTHETIC
 
     ext = path.suffix.lower()
     if ext not in SUPPORTED_VIDEO_FORMATS:
@@ -146,6 +156,7 @@ def extract_trajectory_from_video(
         detection_rate=detection_rate,
         is_synthetic=is_synthetic,
         notes=notes,
+        data_source=resolved_source,
     )
 
 

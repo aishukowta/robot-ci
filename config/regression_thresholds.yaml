@@ -59,6 +59,11 @@ action_difference:
     major: 0.08
     critical: 0.15
 
+# NOTE (methodology): reward is a per-episode SUM that includes a +10 success
+# bonus and per-step penalties, so it can be near or below zero. A RELATIVE
+# change of such a quantity is unstable (e.g. 4.9 -> -3.7 reads as -175%).
+# Kept unchanged here so results match the paper; consider "absolute" with
+# thresholds in reward units, or "monitor", in future work.
 reward_difference:
   threshold: 0.10
   direction: decrease

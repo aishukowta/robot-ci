@@ -11,6 +11,26 @@ from robot_ci.evaluation.evaluator import EvaluationEngine
 from robot_ci.regression.detector import RegressionDetector
 from robot_ci.results.models import TestRunResult
 from robot_ci.results.store import ResultStore
+from robot_ci.stats import summarize, bootstrap_delta_ci
+
+
+def compute_variability(metric_results) -> dict:
+    """Per-metric spread across all matched rollouts (scenarios x trials).
+
+    Detection rules are NOT changed; this is reported alongside them so a
+    reader can judge how stable each difference is.
+    """
+    out = {}
+    for mr in metric_results:
+        b = [float(v["baseline"]) for v in mr.per_scenario.values()]
+        c = [float(v["candidate"]) for v in mr.per_scenario.values()]
+        out[mr.metric_name] = {
+            "baseline": summarize(b),
+            "candidate": summarize(c),
+            "delta_mean_ci95": bootstrap_delta_ci(b, c),
+            "note": "Spread is across scenarios and trials together; use --trials N for per-scenario repeatability.",
+        }
+    return out
 
 class PipelineRunner:
     def __init__(self, config_dir: str = "config", results_dir: str = "results"):
@@ -68,8 +88,11 @@ class PipelineRunner:
         print("\n[6/8] Evaluating metrics...")
         eval_engine = EvaluationEngine()
         metric_results = eval_engine.evaluate(baseline_rollouts, candidate_rollouts)
+        variability_preview = compute_variability(metric_results)
         for mr in metric_results:
-            print(f"  {mr.metric_name}: baseline={mr.baseline_value:.4f}, candidate={mr.candidate_value:.4f}, delta={mr.delta:.4f}")
+            ci = variability_preview[mr.metric_name]["delta_mean_ci95"]
+            ci_txt = f", delta 95% CI=[{ci[0]:.4f}, {ci[1]:.4f}]" if ci else ""
+            print(f"  {mr.metric_name}: baseline={mr.baseline_value:.4f}, candidate={mr.candidate_value:.4f}, delta={mr.delta:.4f}{ci_txt}")
         
         # 7. Detect regressions
         print("\n[7/8] Detecting regressions...")
@@ -108,6 +131,7 @@ class PipelineRunner:
             regression_findings=[f.to_dict() for f in findings],
             overall_status=overall_status,
             rollout_summary=rollout_summary,
+            variability=compute_variability(metric_results),
         )
         
         store = ResultStore(self.results_dir)

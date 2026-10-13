@@ -13,6 +13,11 @@ from .safety import (
     SafetyValidationError,
 )
 
+# The scaffold does not read measured robot state: positions are the commanded
+# targets accumulated in software. Every observation is labelled accordingly.
+EE_POSITION_SOURCE = "commanded_dead_reckoning_not_measured"
+
+
 class HardwareBackend(SimulatorBackend):
     """Hardware execution backend scaffold.
     
@@ -109,12 +114,17 @@ class HardwareBackend(SimulatorBackend):
         # 2. Validate action command
         valid_action = self.safety_validator.validate_action(action)
         
-        # 3. Validate target Cartesian workspace bounds
+        # 3. Validate target Cartesian workspace bounds. The hardware config is
+        #    authoritative; if the scenario also defines bounds, the stricter
+        #    intersection of the two is used.
         target_pos = self.ee_position + valid_action[0:3]
-        if self.config.enforce_workspace and self._scenario and "workspace_bounds" in self._scenario.environment_params:
-            self.safety_validator.validate_cartesian_position(
-                target_pos, self._scenario.environment_params["workspace_bounds"]
-            )
+        if self.config.enforce_workspace:
+            bounds = self._effective_workspace_bounds()
+            if bounds is None:
+                raise SafetyValidationError(
+                    "enforce_workspace is enabled but no workspace bounds are configured."
+                )
+            self.safety_validator.validate_cartesian_position(target_pos, bounds)
 
         # 4. If transport is configured, dispatch command through validated transport
         receipt_ack = False
@@ -143,8 +153,11 @@ class HardwareBackend(SimulatorBackend):
             "wall_time": time.time(),
             "timestep": self.timestep,
             "receipt_acknowledged": receipt_ack,
-            "success": phys_completed,  # Acknowledgment != physical completion!
+            "command_completed": phys_completed,
+            # Task success cannot be inferred from command completion.
+            "success": False,
             "collision": False,
+            "ee_position_source": EE_POSITION_SOURCE,
         }
         return self._build_observation(), 0.0, False, info
 
@@ -159,6 +172,7 @@ class HardwareBackend(SimulatorBackend):
             "ee_position": self.ee_position.tolist(),
             "gripper_open": self.gripper_open,
             "joint_state": None,
+            "ee_position_source": EE_POSITION_SOURCE,
             "robot_name": self.config.robot_name,
             "timestep": self.timestep,
         }
@@ -168,6 +182,21 @@ class HardwareBackend(SimulatorBackend):
             self._transport.disconnect()
         self._connected = False
         self._safe_stop_active = False
+
+    def _effective_workspace_bounds(self):
+        cfg = self.config.workspace_bounds
+        scen = None
+        if self._scenario is not None:
+            scen = self._scenario.environment_params.get("workspace_bounds")
+        if cfg is None and scen is None:
+            return None
+        if cfg is None:
+            return scen
+        if scen is None:
+            return cfg
+        low = np.maximum(np.asarray(cfg[0], dtype=np.float32), np.asarray(scen[0], dtype=np.float32))
+        high = np.minimum(np.asarray(cfg[1], dtype=np.float32), np.asarray(scen[1], dtype=np.float32))
+        return [low.tolist(), high.tolist()]
 
     def _build_observation(self) -> np.ndarray:
         obs = np.zeros(10, dtype=np.float32)

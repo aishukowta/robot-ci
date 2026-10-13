@@ -33,8 +33,17 @@ class CameraCalibration:
     camera_model_name: str = "pinhole_calibrated"
     calibration_date: Optional[str] = None
     notes: Optional[str] = None
+    # Provenance: "measured" (real checkerboard/known-geometry calibration of the
+    # camera used for the recording), "synthetic_fixture", or "unspecified".
+    # Only "measured" calibrations are accepted as physical evidence.
+    source: str = "unspecified"
 
     def __post_init__(self):
+        text = f"{self.camera_model_name} {self.notes or ''}".lower()
+        if "synthetic" in text:
+            self.source = "synthetic_fixture"
+        if self.source not in ("measured", "synthetic_fixture", "unspecified"):
+            raise CalibrationError(f"Invalid calibration source '{self.source}'")
         self.validate()
 
     def validate(self) -> None:
@@ -157,6 +166,7 @@ class CameraCalibration:
             "camera_model_name": self.camera_model_name,
             "calibration_date": self.calibration_date,
             "notes": self.notes,
+            "source": self.source,
         }
 
     @classmethod
@@ -174,6 +184,7 @@ class CameraCalibration:
             camera_model_name=data.get("camera_model_name", "pinhole_calibrated"),
             calibration_date=data.get("calibration_date"),
             notes=data.get("notes"),
+            source=data.get("source", "unspecified"),
         )
 
     def save(self, filepath: Union[str, Path]) -> str:
@@ -226,4 +237,5 @@ def create_synthetic_camera_calibration(
         translation_vector=t,
         camera_model_name="synthetic_side_view",
         notes="Synthetic test calibration fixture",
+        source="synthetic_fixture",
     )

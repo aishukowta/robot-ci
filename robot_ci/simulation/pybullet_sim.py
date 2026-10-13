@@ -56,6 +56,13 @@ class PyBulletSimulator(SimulatorBackend):
     def name(self) -> str:
         return "pybullet"
 
+    PHYSICS_DT = 1.0 / 240.0
+
+    @property
+    def control_dt(self) -> float:
+        """Simulated seconds per policy step (action_repeat physics steps at 240 Hz)."""
+        return self.action_repeat * self.PHYSICS_DT
+
     def _ensure_imported(self) -> None:
         if self._p is not None:
             return

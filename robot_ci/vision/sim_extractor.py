@@ -20,6 +20,9 @@ from robot_ci.simulation.mock import MockSimulator
 from robot_ci.simulation.pybullet_sim import PyBulletSimulator
 
 
+NOMINAL_MOCK_DT = 0.05  # mock simulator has no physical time base
+
+
 @dataclass
 class SimulatedTrajectoryResult:
     """Actual end-effector trajectory and execution metadata extracted from simulation."""
@@ -127,10 +130,12 @@ def extract_simulated_trajectory(
         timestamps: List[float] = []
         events: List[Dict[str, Any]] = []
 
-        # In PyBullet/Mock: rollout.states contains step states
-        # dt for PyBullet is (1/240) * 24 = 0.1s per step
-        dt = 0.1 if simulator_name.lower() == "pybullet" else 0.1
+        # Simulated time per policy step. PyBullet: action_repeat (12) physics
+        # steps at 240 Hz = 0.05 s. The mock simulator has no physical clock, so
+        # it uses the same NOMINAL value and the result is flagged as nominal.
+        dt = float(getattr(sim, "control_dt", NOMINAL_MOCK_DT))
 
+        prev_collisions = 0
         for step_idx, state in enumerate(rollout.states):
             ee = state.get("ee_position")
             if ee is not None and len(ee) == 3:
@@ -138,15 +143,17 @@ def extract_simulated_trajectory(
                 timesteps.append(step_idx)
                 timestamps.append(step_idx * dt)
 
+            collisions_now = int(state.get("collision_count", 0) or 0)
             events.append({
                 "step": step_idx,
-                "collision": state.get("collision_count", 0) > 0,
+                "collision": collisions_now > prev_collisions,  # new contact at THIS step
                 "success": state.get("success", False),
             })
+            prev_collisions = collisions_now
 
         ee_array = np.array(positions, dtype=np.float64)
         run_id = str(uuid.uuid4())[:8]
-        duration = len(positions) * dt if positions else 0.0
+        duration = rollout.total_steps * dt
 
         return SimulatedTrajectoryResult(
             run_id=run_id,

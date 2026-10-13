@@ -182,6 +182,14 @@ class McapTelemetryAdapter(TelemetryReaderAdapter):
 
                     ts = float(message.log_time) * 1e-9
 
+                    encoding = str(getattr(channel, "message_encoding", "") or "").lower()
+                    if encoding in ("cdr", "ros1", "protobuf", "flatbuffer"):
+                        raise UnsupportedFormatError(
+                            f"MCAP channel '{channel.topic}' uses '{encoding}' message encoding. Only JSON-encoded "
+                            "MCAP messages are supported. Real 'ros2 bag record -s mcap' files are CDR-encoded and "
+                            "need a ROS 2 decoder (e.g. mcap-ros2-support), which is not implemented."
+                        )
+
                     payload = None
                     try:
                         payload = json.loads(message.data.decode("utf-8"))
@@ -196,12 +204,11 @@ class McapTelemetryAdapter(TelemetryReaderAdapter):
                         elif "position" in payload and "name" in payload:
                             from robot_ci.transport.ros2_mapping import ros_joint_state_to_measurement
                             if "header" not in payload:
-                                payload["header"] = {"stamp": ts, "frame_id": "base_link"}
+                                payload["header"] = {"stamp": ts}
                             else:
                                 if "stamp" not in payload["header"]:
                                     payload["header"]["stamp"] = ts
-                                if "frame_id" not in payload["header"]:
-                                    payload["header"]["frame_id"] = "base_link"
+                                # frame_id is left missing rather than assumed
                             measurement = ros_joint_state_to_measurement(payload)
                             records.append(TelemetryRecord(
                                 timestamp=measurement.timestamp,
@@ -211,12 +218,11 @@ class McapTelemetryAdapter(TelemetryReaderAdapter):
                         elif "pose" in payload:
                             from robot_ci.transport.ros2_mapping import ros_pose_stamped_to_measurement
                             if "header" not in payload:
-                                payload["header"] = {"stamp": ts, "frame_id": "base_link"}
+                                payload["header"] = {"stamp": ts}
                             else:
                                 if "stamp" not in payload["header"]:
                                     payload["header"]["stamp"] = ts
-                                if "frame_id" not in payload["header"]:
-                                    payload["header"]["frame_id"] = "base_link"
+                                # frame_id is left missing rather than assumed
                             measurement = ros_pose_stamped_to_measurement(payload)
                             records.append(TelemetryRecord(
                                 timestamp=measurement.timestamp,

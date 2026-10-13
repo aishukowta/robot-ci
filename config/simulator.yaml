@@ -6,8 +6,8 @@
 # Per-scenario environment_params override these defaults.
 #
 # NOTE: This is NOT a realistic physics simulator.
-# It validates the Robot CI software architecture before later Isaac Sim
-# integration.
+# It provides fast, deterministic runs for testing the Robot CI software
+# architecture. PyBullet is the physics backend used for reported results.
 # =============================================================================
 
 defaults:

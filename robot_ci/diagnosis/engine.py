@@ -14,7 +14,14 @@ from robot_ci.diagnosis.models import (
     DIAGNOSIS_LIMITATIONS_DISCLAIMER,
 )
 from robot_ci.results.models import TestRunResult
-from robot_ci.vision.comparison import VideoSimComparisonReport
+from robot_ci.vision.comparison import VideoSimComparisonReport, ALIGNMENT_MASKING_FACTOR
+from robot_ci.vision.models import (
+    DATA_SOURCE_SYNTHETIC,
+    DATA_SOURCE_ROBOT,
+    DATA_SOURCE_HANDHELD,
+    DATA_SOURCE_PERTURBED_SIM,
+    DATA_SOURCE_UNSPECIFIED,
+)
 
 
 def evaluate_diagnosis(
@@ -78,7 +85,7 @@ def evaluate_diagnosis(
             evidence_sources.append(EvidenceItem(
                 source_type="SIMULATION_REGRESSION",
                 identifier=run_id,
-                provenance="PYBULLET_SIMULATION",
+                provenance=f"{str(ci_dict.get('simulator_name', 'unknown')).upper()}_SIMULATION",
                 is_physical_hardware=False,
                 is_valid=True,
                 summary=f"CI regression run {run_id} ({ci_dict.get('baseline_policy_version')} vs {ci_dict.get('candidate_policy_version')})",
@@ -123,11 +130,48 @@ def evaluate_diagnosis(
         video_file = str(prov.get("video_file", ""))
         units = v_dict.get("units", "")
 
+        data_source = str(prov.get("data_source") or v_dict.get("data_source") or "")
         is_synthetic = bool(
             prov.get("video_source_is_synthetic", False)
             or v_dict.get("is_synthetic", False)
             or "synthetic" in video_file.lower()
+            or data_source == DATA_SOURCE_SYNTHETIC
         )
+        if is_synthetic:
+            data_source = DATA_SOURCE_SYNTHETIC
+        elif not data_source:
+            # Old reports (before explicit provenance) are never assumed physical.
+            data_source = DATA_SOURCE_UNSPECIFIED
+        is_physical_robot = data_source == DATA_SOURCE_ROBOT
+
+        calibration_source = prov.get("calibration_source")
+        calibration_matches = prov.get("calibration_matches_video_size")
+        calibrated_mode = "CALIBRATED" in str(mode).upper()
+
+        # Consistency between the CI run and the video comparison
+        consistency_ok = True
+        if ci_dict is not None:
+            ci_scenarios = [str(x) for x in ci_dict.get("scenario_ids", [])]
+            v_scenario = str(v_dict.get("scenario_id", ""))
+            if ci_scenarios and v_scenario and v_scenario not in ci_scenarios:
+                consistency_ok = False
+                data_quality_warnings.append(
+                    f"Video comparison scenario '{v_scenario}' is not part of CI run scenarios {ci_scenarios}; "
+                    "the two evidence sources are not combined."
+                )
+            v_policy = str(v_dict.get("sim_policy_id", ""))
+            cand = str(ci_dict.get("candidate_policy_version", ""))
+            base = str(ci_dict.get("baseline_policy_version", ""))
+            if v_policy and v_policy not in cand and v_policy not in base:
+                data_quality_warnings.append(
+                    f"Video comparison simulated policy '{v_policy}', which is neither the CI baseline ({base}) "
+                    f"nor the candidate ({cand})."
+                )
+            elif v_policy and v_policy in base and v_policy not in cand:
+                data_quality_warnings.append(
+                    f"Video comparison checks the BASELINE policy ('{v_policy}') on hardware, while the CI "
+                    f"regression concerns the candidate ({cand}). Sim-to-real evidence describes the baseline."
+                )
 
         tracking_cov = float(metrics.get("tracking_coverage", 0.0))
         rms_dev = float(metrics.get("rms_trajectory_deviation", 0.0))
@@ -140,8 +184,8 @@ def evaluate_diagnosis(
             evidence_sources.append(EvidenceItem(
                 source_type="VIDEO_TRAJECTORY_COMPARISON",
                 identifier=v_id,
-                provenance="SYNTHETIC_FIXTURE" if is_synthetic else "PHYSICAL_ROBOT_RECORDING",
-                is_physical_hardware=not is_synthetic,
+                provenance=data_source.upper(),
+                is_physical_hardware=is_physical_robot,
                 is_valid=True,
                 summary=f"Video comparison {v_id} ({mode}, controller: {phys_ctrl}, tracking: {tracking_cov * 100:.1f}%)",
                 details={
@@ -150,6 +194,8 @@ def evaluate_diagnosis(
                     "rms_deviation": rms_dev,
                     "raw_rms_deviation": raw_rms_dev,
                     "comparison_type": comp_type,
+                    "data_source": data_source,
+                    "calibration_source": calibration_source,
                 },
             ))
 
@@ -160,6 +206,39 @@ def evaluate_diagnosis(
                 )
                 unsupported_conclusions.append(
                     "Physical sim-to-real transfer cannot be assessed because the video source is a synthetic test fixture."
+                )
+            # Rule: only declared robot recordings are physical robot evidence
+            elif not is_physical_robot:
+                if data_source == DATA_SOURCE_HANDHELD:
+                    data_quality_warnings.append(
+                        "Hand-held marker recording: validates video tracking on real camera footage, "
+                        "but is not robot evidence."
+                    )
+                elif data_source == DATA_SOURCE_PERTURBED_SIM:
+                    data_quality_warnings.append(
+                        "Controlled simulation perturbation: useful for validating the diagnosis logic, "
+                        "not physical robot evidence."
+                    )
+                else:
+                    data_quality_warnings.append(
+                        f"Video data source is '{data_source}' (not declared as a robot recording); "
+                        "it is not treated as physical robot evidence."
+                    )
+                unsupported_conclusions.append(
+                    "Physical sim-to-real transfer cannot be assessed: the recording is not a declared robot recording."
+                )
+            elif not consistency_ok:
+                unsupported_conclusions.append(
+                    "Video evidence was not combined because it does not refer to a scenario in the CI run."
+                )
+            elif calibrated_mode and (calibration_source != "measured" or calibration_matches is False):
+                data_quality_warnings.append(
+                    f"Calibrated comparison used calibration source '{calibration_source}'"
+                    + (" with an image size different from the video" if calibration_matches is False else "")
+                    + "; pixel errors are not accepted as physical evidence."
+                )
+                unsupported_conclusions.append(
+                    "Calibrated sim-to-real error cannot be trusted without a measured calibration of the recording camera."
                 )
             # Rule: Adequate tracking coverage
             elif tracking_cov < min_tracking_coverage:
@@ -207,7 +286,7 @@ def evaluate_diagnosis(
                         )
 
                 # Check if alignment masked raw discrepancy
-                if raw_rms_dev > 1.8 * rms_dev:
+                if raw_rms_dev > ALIGNMENT_MASKING_FACTOR * rms_dev:
                     data_quality_warnings.append(
                         f"Alignment masking notice: Raw unaligned deviation was {raw_rms_dev:.4f}, but Procrustes alignment reduced it to {rms_dev:.4f}. "
                         "Rigid alignment may conceal significant spatial translation or scale mismatch."

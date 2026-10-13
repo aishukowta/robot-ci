@@ -27,6 +27,8 @@ class TestRunResult:
     confidence_score: Optional[float] = None
     deployment_recommendation: Optional[str] = None
     hardware_validation: Optional[dict] = None
+    # Per-metric variability across trials (mean/std/bootstrap 95% CI).
+    variability: Optional[dict] = None
     
     def to_dict(self) -> dict:
         d = {
@@ -52,6 +54,8 @@ class TestRunResult:
             d["deployment_recommendation"] = self.deployment_recommendation
         if self.hardware_validation is not None:
             d["hardware_validation"] = self.hardware_validation
+        if self.variability is not None:
+            d["variability"] = self.variability
         return d
     
     @classmethod
@@ -73,4 +77,5 @@ class TestRunResult:
             confidence_score=data.get("confidence_score"),
             deployment_recommendation=data.get("deployment_recommendation"),
             hardware_validation=data.get("hardware_validation"),
+            variability=data.get("variability"),
         )

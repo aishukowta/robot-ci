@@ -158,3 +158,63 @@ def test_hardware_pipeline_selection_fails_closed(config_dir, scenarios_dir, tmp
             seed=42,
             simulator_name="hardware",
         )
+
+
+# ---------------------------------------------------------------------------
+# Audit hardening (B4.5)
+# ---------------------------------------------------------------------------
+
+def _connected_backend(cfg, execution_enabled=False):
+    from robot_ci.simulation.hardware import HardwareBackend
+    from robot_ci.transport.fake_transport import FakeRobotTransport
+    t = FakeRobotTransport(execution_enabled=execution_enabled)
+    t.connect()
+    hb = HardwareBackend(config=cfg, transport=t)
+    return hb
+
+
+def _scenario():
+    from robot_ci.scenarios.manager import ScenarioManager
+    return ScenarioManager().load_scenario("scenarios/reach_simple.yaml")
+
+
+def test_step_limit_is_exactly_max_step_size():
+    import numpy as np
+    import pytest
+    from robot_ci.simulation.safety import HardwareConfig, SafetyValidationError
+    cfg = HardwareConfig(workspace_bounds=[[0.2, -0.5, 0.0], [0.8, 0.5, 0.8]], max_step_size=0.03)
+    hb = _connected_backend(cfg)
+    hb.reset(_scenario())
+    with pytest.raises(SafetyValidationError):
+        hb.step(np.array([0.04, 0.0, 0.0, 1.0]))  # 0.04 > 0.03 (previously allowed up to 0.06)
+
+
+def test_gripper_range_validated():
+    import numpy as np
+    import pytest
+    from robot_ci.simulation.safety import HardwareConfig, SafetyValidationError
+    hb = _connected_backend(HardwareConfig(workspace_bounds=[[0.2, -0.5, 0.0], [0.8, 0.5, 0.8]]))
+    hb.reset(_scenario())
+    with pytest.raises(SafetyValidationError):
+        hb.step(np.array([0.0, 0.0, 0.0, 3.0]))
+
+
+def test_hardware_config_bounds_are_authoritative():
+    import numpy as np
+    import pytest
+    from robot_ci.simulation.safety import HardwareConfig, SafetyValidationError
+    # Scenario allows x up to 1.0; hardware config only up to 0.32.
+    hb = _connected_backend(HardwareConfig(workspace_bounds=[[0.2, -0.5, 0.0], [0.32, 0.5, 0.8]], max_step_size=0.05))
+    hb.reset(_scenario())  # starts at x = 0.30
+    with pytest.raises(SafetyValidationError):
+        hb.step(np.array([0.04, 0.0, 0.0, 1.0]))
+
+
+def test_success_never_inferred_from_command_completion():
+    import numpy as np
+    from robot_ci.simulation.safety import HardwareConfig
+    hb = _connected_backend(HardwareConfig(workspace_bounds=[[0.2, -0.5, 0.0], [0.8, 0.5, 0.8]]), execution_enabled=True)
+    hb.reset(_scenario())
+    _, _, _, info = hb.step(np.array([0.01, 0.0, 0.0, 1.0]))
+    assert info["success"] is False
+    assert info["ee_position_source"] == "commanded_dead_reckoning_not_measured"

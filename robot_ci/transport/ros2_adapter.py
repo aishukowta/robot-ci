@@ -47,8 +47,19 @@ def is_ros2_available() -> bool:
         return False
 
 
+SCAFFOLD_NOTICE = (
+    "ROS 2 adapter is a SCAFFOLD: it can create a ROS 2 node, but no subscribers, publishers "
+    "or service clients are implemented. It cannot read robot state, send commands or "
+    "request a stop."
+)
+
+
 class ROS2RobotTransport(RobotTransport):
-    """ROS 2 implementation of the RobotTransport contract.
+    """ROS 2 transport SCAFFOLD (no live communication implemented).
+
+    Only node creation is implemented. read_state / send_command raise
+    NotImplementedError and request_safe_stop returns False, so nothing can
+    mistake this class for a working robot connection.
     
     Communicates with robot drivers via standard ROS 2 publishers, subscribers,
     and services. Never executes on Windows without native ROS 2.
@@ -117,16 +128,17 @@ class ROS2RobotTransport(RobotTransport):
             metadata={"node_name": self.config.node_name, "ros2_available": is_ros2_available()},
         )
 
+    is_scaffold = True
+
     def read_state(self) -> Optional[RobotMeasurement]:
         if not self.is_connected():
             return None
-        # In a running ROS 2 node, this retrieves the latest cached sensor_msgs/JointState
-        return None
+        raise NotImplementedError(SCAFFOLD_NOTICE + " (read_state: no JointState subscriber)")
 
     def request_safe_stop(self) -> bool:
+        """Records the request locally; NO service is called. Returns False (not delivered)."""
         self._safe_stop_active = True
-        # In ROS 2, call safe_stop_service if configured
-        return True
+        return False
 
     def is_safe_stop_confirmed(self) -> bool:
         return self._safe_stop_active and self._safe_stop_confirmed
@@ -142,11 +154,4 @@ class ROS2RobotTransport(RobotTransport):
             raise TransportCommandRejectedError("Cannot send command: safe stop is active.")
 
         command.validate_finite()
-        # Publish to command_topic
-        return CommandExecutionReport(
-            command_id=command.command_id,
-            receipt_acknowledged=True,
-            execution_status="RECEIVED",
-            is_physically_completed=False,
-            metadata={"transport": "ros2"},
-        )
+        raise NotImplementedError(SCAFFOLD_NOTICE + " (send_command: no publisher)")

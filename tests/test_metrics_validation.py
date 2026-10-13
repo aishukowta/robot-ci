@@ -269,7 +269,7 @@ def test_alignment_does_not_conceal_meaningful_differences():
     metrics = report.metrics
     assert metrics["rms_trajectory_deviation"] > 0.1  # Significant normalized deviation
     assert metrics["max_trajectory_deviation"] > 0.2
-    assert report.alignment_details["method"] == "normalized_progress_resampling_with_2d_procrustes"
+    assert report.alignment_details["method"] == "uniform_normalization_progress_resampling_2d_procrustes_rotation_only"
 
 
 def test_camera_calibration_strictly_validated():

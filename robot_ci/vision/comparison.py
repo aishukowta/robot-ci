@@ -39,6 +39,15 @@ class ComparisonMode(str, Enum):
     SHAPE_ONLY_2D = "SHAPE_ONLY_2D"
 
 
+# Shared threshold: if Procrustes alignment reduces RMS error by more than this
+# factor, alignment may be hiding a real spatial difference. Used by both the
+# comparison engine and the diagnosis engine so they never disagree.
+ALIGNMENT_MASKING_FACTOR = 1.5
+
+# If allowing a mirror (reflection) reduces error by more than this factor, the
+# camera axes are probably mirrored relative to the simulation plane.
+REFLECTION_WARNING_FACTOR = 2.0
+
 UNAVAILABLE_METRICS_LIST = [
     "joint_angle_error (requires internal robot encoder/joint-state telemetry)",
     "3d_cartesian_error_meters (monocular video lacks metric depth ground truth)",
@@ -224,10 +233,30 @@ def compute_2d_dtw(traj_a: np.ndarray, traj_b: np.ndarray) -> Tuple[float, float
     return total_cost, avg_dist, path_len
 
 
+def normalize_uniform_2d(points: np.ndarray) -> Tuple[np.ndarray, Dict[str, Any]]:
+    """Center a 2D path on its bounding-box centre and divide by ONE scale.
+
+    Unlike per-axis min-max normalisation, the aspect ratio is preserved, so the
+    path's shape is not distorted and noise on a near-stationary axis is not
+    amplified.
+    """
+    pts = np.asarray(points, dtype=np.float64)
+    lo = np.min(pts, axis=0)
+    hi = np.max(pts, axis=0)
+    centre = (lo + hi) / 2.0
+    span = float(np.max(hi - lo))
+    scale = span if span > 1e-9 else 1.0
+    return (pts - centre) / scale, {
+        "centre": [round(float(c), 6) for c in centre],
+        "scale": round(scale, 6),
+    }
+
+
 def procrustes_align_2d(
     source: np.ndarray,
     target: np.ndarray,
     allow_scaling: bool = True,
+    allow_reflection: bool = False,
 ) -> Tuple[np.ndarray, Dict[str, Any]]:
     """Align source 2D trajectory onto target 2D trajectory using 2D Procrustes analysis.
     
@@ -254,7 +283,7 @@ def procrustes_align_2d(
     h = centered_src.T @ centered_tgt
     u, s, vt = np.linalg.svd(h)
     d = float(np.linalg.det(u @ vt))
-    sign = 1.0 if d >= 0 else -1.0
+    sign = 1.0 if (d >= 0 or allow_reflection) else -1.0
     s_sign = np.diag([1.0, sign])
     r = u @ s_sign @ vt
 
@@ -271,6 +300,7 @@ def procrustes_align_2d(
         "translation": [round(float(t), 4) for t in (mean_tgt - mean_src)],
         "rotation_degrees": round(angle_deg, 2),
         "scale_factor": round(scale, 4),
+        "reflection_applied": bool(allow_reflection and d < 0),
     }
 
     return aligned, transform_doc
@@ -290,6 +320,8 @@ def compare_video_to_simulation(
     shape_projection_plane: str = "xy",
     apply_procrustes_alignment: bool = True,
     num_resample_points: int = 50,
+    physical_executed_by_robot_ci_policy: bool = False,
+    image_axes: str = "v_up",
 ) -> VideoSimComparisonReport:
     """Compare an extracted video trajectory to an actual simulation rollout.
     
@@ -304,6 +336,11 @@ def compare_video_to_simulation(
         shape_projection_plane: 2D projection plane for Mode B ('xy', 'xz', 'yz').
         apply_procrustes_alignment: Whether to optimize 2D rigid alignment in Mode B.
         num_resample_points: Number of uniformly resampled points for comparison.
+        physical_executed_by_robot_ci_policy: Must be True (explicit user
+            declaration) for the report to be labelled matched-policy. Manual
+            teleoperation or vendor demo programs never qualify.
+        image_axes: "v_up" (default) flips image v so it points up like the
+            simulation's z / y axes; "v_down" keeps raw image orientation.
     
     Returns:
         VideoSimComparisonReport containing metrics, coordinates, units, and disclaimers.
@@ -358,15 +395,33 @@ def compare_video_to_simulation(
                 f"while simulation ran '{sim_trajectory.scenario_id}'."
             )
 
-    # Controller identity check
-    if physical_controller_id.lower() == sim_trajectory.policy_id.lower():
+    # Controller identity check. A matching name alone is NOT enough: the user
+    # must explicitly declare that the physical robot executed this Robot CI
+    # policy, and the claim is recorded as user-declared and unverified.
+    names_match = physical_controller_id.lower() == sim_trajectory.policy_id.lower()
+    matched_policy_claim = "none"
+    if physical_executed_by_robot_ci_policy and names_match:
         comp_type = "matched_policy_verification"
+        matched_policy_claim = "user_declared_unverified"
+        warnings.append(
+            "Matched-policy claim is user-declared: Robot CI cannot itself verify that the physical "
+            "robot executed this policy."
+        )
     else:
         comp_type = "cross_controller_behavioural_comparison"
-        warnings.append(
-            f"Cross-controller behavioural comparison: physical controller '{physical_controller_id}' "
-            f"differs from simulation policy '{sim_trajectory.policy_id}'."
-        )
+        if names_match and not physical_executed_by_robot_ci_policy:
+            warnings.append(
+                f"Controller name '{physical_controller_id}' matches the simulation policy, but same-policy "
+                "execution on the robot was not declared; treated as a cross-controller comparison."
+            )
+        else:
+            warnings.append(
+                f"Cross-controller behavioural comparison: physical controller '{physical_controller_id}' "
+                f"differs from simulation policy '{sim_trajectory.policy_id}'."
+            )
+
+    if image_axes not in ("v_up", "v_down"):
+        raise ValueError("image_axes must be 'v_up' or 'v_down'")
 
     # 3. Branch by Comparison Mode
     if effective_mode == ComparisonMode.CALIBRATED_PROJECTION:
@@ -437,11 +492,14 @@ def compare_video_to_simulation(
             "NOT physical meters and NOT calibrated camera pixels."
         )
 
-        # Video points in normalized coordinates [u_norm, v_norm]
+        # Video points in normalized image coordinates [u_norm, v_norm]
         video_pts = np.array([
             obs.normalized_coordinates for obs in detected_obs
             if obs.normalized_coordinates is not None
         ], dtype=np.float64)
+        if image_axes == "v_up":
+            # Image v grows downwards; simulation z (and y in top view) grows upwards.
+            video_pts = np.c_[video_pts[:, 0], 1.0 - video_pts[:, 1]]
 
         # Project 3D simulation trajectory onto selected 2D plane
         ee = sim_trajectory.ee_positions
@@ -452,49 +510,53 @@ def compare_video_to_simulation(
         else:  # default 'xy'
             sim_2d_raw = ee[:, [0, 1]]
 
-        # Min-max normalize sim trajectory to [0, 1]
-        sim_min = np.min(sim_2d_raw, axis=0)
-        sim_max = np.max(sim_2d_raw, axis=0)
-        sim_span = np.where((sim_max - sim_min) > 1e-6, sim_max - sim_min, 1.0)
-        sim_2d_norm = (sim_2d_raw - sim_min) / sim_span
+        # Same normalisation for both paths: centre + one uniform scale (aspect preserved)
+        video_norm, video_norm_doc = normalize_uniform_2d(video_pts)
+        sim_2d_norm, sim_norm_doc = normalize_uniform_2d(sim_2d_raw)
 
-        # Resample both curves uniformly
-        resampled_video = resample_2d_trajectory(video_pts, num_resample_points)
+        # Resample both curves uniformly over normalised progress
+        resampled_video = resample_2d_trajectory(video_norm, num_resample_points)
         resampled_sim = resample_2d_trajectory(sim_2d_norm, num_resample_points)
 
-        # Calculate raw unaligned deviation
+        # "Raw" deviation: after centring + uniform scaling, before any rotation
         raw_point_diffs = np.linalg.norm(resampled_video - resampled_sim, axis=1)
         raw_mean_dev = float(np.mean(raw_point_diffs))
         raw_rms_dev = float(np.sqrt(np.mean(raw_point_diffs ** 2)))
         raw_max_dev = float(np.max(raw_point_diffs))
 
-        # Apply documented Procrustes alignment if requested
+        base_doc = {
+            "projection_plane": shape_projection_plane.lower(),
+            "image_axes": image_axes,
+            "normalization": "bounding_box_centre_and_single_uniform_scale (aspect ratio preserved)",
+            "video_normalization": video_norm_doc,
+            "sim_normalization_m": sim_norm_doc,
+            "resampled_points_count": num_resample_points,
+        }
+
         if apply_procrustes_alignment:
             aligned_video, procrustes_doc = procrustes_align_2d(resampled_video, resampled_sim)
             compare_video = aligned_video
             compare_sim = resampled_sim
-            alignment_doc = {
-                "method": "normalized_progress_resampling_with_2d_procrustes",
-                "projection_plane": shape_projection_plane.lower(),
-                "sim_normalization_bounds": {
-                    "min": [round(float(v), 4) for v in sim_min],
-                    "max": [round(float(v), 4) for v in sim_max],
-                },
+            # Reported separately, never silently substituted
+            mirrored_video, mirror_doc = procrustes_align_2d(
+                resampled_video, resampled_sim, allow_reflection=True
+            )
+            mirror_rms = float(np.sqrt(np.mean(np.sum((mirrored_video - resampled_sim) ** 2, axis=1))))
+            alignment_doc = dict(base_doc)
+            alignment_doc.update({
+                "method": "uniform_normalization_progress_resampling_2d_procrustes_rotation_only",
                 "procrustes_transform": procrustes_doc,
-                "resampled_points_count": num_resample_points,
-            }
+                "reflection_check": {
+                    "aligned_rms_with_reflection": round(mirror_rms, 4),
+                    "transform": mirror_doc,
+                },
+            })
         else:
             compare_video = resampled_video
             compare_sim = resampled_sim
-            alignment_doc = {
-                "method": "normalized_bounding_alignment",
-                "projection_plane": shape_projection_plane.lower(),
-                "sim_normalization_bounds": {
-                    "min": [round(float(v), 4) for v in sim_min],
-                    "max": [round(float(v), 4) for v in sim_max],
-                },
-                "resampled_points_count": num_resample_points,
-            }
+            mirror_rms = None
+            alignment_doc = dict(base_doc)
+            alignment_doc["method"] = "uniform_normalization_progress_resampling"
 
         video_path_len = compute_2d_path_length(compare_video)
         sim_path_len = compute_2d_path_length(compare_sim)
@@ -504,11 +566,17 @@ def compare_video_to_simulation(
         rms_dev = float(np.sqrt(np.mean(point_diffs ** 2)))
         max_dev = float(np.max(point_diffs))
 
-        if apply_procrustes_alignment and raw_rms_dev > 1.5 * rms_dev:
+        if apply_procrustes_alignment and raw_rms_dev > ALIGNMENT_MASKING_FACTOR * rms_dev:
             reduction_pct = round((1.0 - (rms_dev / max(raw_rms_dev, 1e-9))) * 100, 1)
             warnings.append(
-                f"Alignment impact notice: 2D Procrustes alignment reduced deviation from {raw_rms_dev:.4f} to {rms_dev:.4f} "
-                f"({reduction_pct}% reduction via translation/rotation/scale adjustment). Check raw vs aligned deviations."
+                f"Alignment impact notice: 2D Procrustes rotation/scale alignment reduced deviation from "
+                f"{raw_rms_dev:.4f} to {rms_dev:.4f} ({reduction_pct}% reduction). Check raw vs aligned deviations."
+            )
+        if mirror_rms is not None and rms_dev > REFLECTION_WARNING_FACTOR * max(mirror_rms, 1e-9) and rms_dev > 0.05:
+            warnings.append(
+                f"Camera axis handedness likely mismatched: allowing a mirror reduces aligned error from "
+                f"{rms_dev:.4f} to {mirror_rms:.4f}. Check --image-axes (v_up/v_down) and --plane. "
+                "The rotation-only value is kept as the reported result."
             )
 
         dtw_cost, dtw_avg_step, _ = compute_2d_dtw(compare_video, compare_sim)
@@ -543,8 +611,30 @@ def compare_video_to_simulation(
         "resampled_points_count": num_resample_points,
     }
 
+    calibration_source = calibration.source if (calibration is not None and effective_mode == ComparisonMode.CALIBRATED_PROJECTION) else None
+    calibration_matches_video = None
+    if calibration_source is not None:
+        calibration_matches_video = (
+            int(calibration.image_width) == int(video_trajectory.video_metadata.width)
+            and int(calibration.image_height) == int(video_trajectory.video_metadata.height)
+        )
+        if calibration_source != "measured":
+            warnings.append(
+                f"Calibration source is '{calibration_source}', not a measured calibration of the recording camera; "
+                "pixel errors cannot be treated as physical evidence."
+            )
+        if not calibration_matches_video:
+            warnings.append(
+                f"Calibration image size {calibration.image_width}x{calibration.image_height} does not match "
+                f"video size {video_trajectory.video_metadata.width}x{video_trajectory.video_metadata.height}."
+            )
+
     provenance = {
         "video_file": video_trajectory.video_metadata.file_path,
+        "data_source": video_trajectory.data_source,
+        "calibration_source": calibration_source,
+        "calibration_matches_video_size": calibration_matches_video,
+        "matched_policy_claim": matched_policy_claim,
         "video_source_is_synthetic": video_trajectory.is_synthetic or video_trajectory.video_metadata.is_synthetic,
         "sim_run_id": sim_trajectory.run_id,
         "sim_backend": sim_trajectory.simulator_backend,

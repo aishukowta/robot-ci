@@ -56,6 +56,10 @@ def main():
     extract_parser.add_argument("--color", default="red", help="Marker color preset: red, green, blue, yellow, orange (default: red)")
     extract_parser.add_argument("--min-area", type=float, default=10.0, help="Minimum marker contour area in pixels (default: 10.0)")
     extract_parser.add_argument("--notes", default=None, help="Optional description notes")
+    extract_parser.add_argument("--source", required=True, choices=["synthetic_fixture", "robot_phone_recording", "handheld_marker_recording", "controlled_sim_perturbation"],
+                                help="REQUIRED provenance of the recording. Fixtures/'synthetic' files are always forced to synthetic_fixture.")
+    extract_parser.add_argument("--roi", default=None, help="Optional search region 'x,y,w,h' in pixels")
+    extract_parser.add_argument("--max-jump", type=float, default=None, help="Optional max marker displacement between frames (pixels)")
 
     # 'compare-video-sim' subcommand
     compare_parser = subparsers.add_parser("compare-video-sim", help="Compare extracted video trajectory against simulation rollout")
@@ -72,6 +76,12 @@ def main():
     compare_parser.add_argument("--plane", choices=["xy", "xz", "yz"], default="xy", help="2D projection plane for shape-only mode (default: xy)")
     compare_parser.add_argument("--color", default="red", help="Marker color preset if extracting from video (default: red)")
     compare_parser.add_argument("--output", default=None, help="Optional output path for comparison report JSON")
+    compare_parser.add_argument("--source", default=None, choices=["synthetic_fixture", "robot_phone_recording", "handheld_marker_recording", "controlled_sim_perturbation"],
+                                help="Provenance when extracting from --video (required with --video)")
+    compare_parser.add_argument("--same-policy-on-robot", action="store_true",
+                                help="Declare that the physical robot executed this exact Robot CI policy (teleop/pendant programs do NOT qualify). Recorded as user-declared.")
+    compare_parser.add_argument("--image-axes", choices=["v_up", "v_down"], default="v_up",
+                                help="Image vertical axis convention for shape-only mode (default v_up = flip image v to point up)")
 
     # 'check-hardware' subcommand (alias: 'readiness')
     hw_parser = subparsers.add_parser("check-hardware", aliases=["readiness"], help="Audit physical robot hardware integration readiness")
@@ -165,15 +175,26 @@ def main():
         print("  ROBOT CI — Video End-Effector Trajectory Extraction")
         print("=" * 70)
         try:
+            roi = None
+            if args.roi:
+                parts = [float(v) for v in args.roi.split(",")]
+                if len(parts) != 4:
+                    raise ValueError("--roi must be 'x,y,w,h'")
+                roi = tuple(parts)
             cfg = TrackerConfig(
                 color_preset=args.color,
                 min_contour_area=args.min_area,
+                roi=roi,
+                max_jump_pixels=args.max_jump,
             )
             result = extract_trajectory_from_video(
                 video_path=args.video,
                 config=cfg,
                 notes=args.notes,
+                data_source=args.source,
             )
+            if result.data_source != args.source:
+                print(f"  NOTICE: data source forced to '{result.data_source}' (fixture or synthetic file name).")
 
             out_json = args.output or f"results/telemetry/{Path(args.video).stem}_trajectory.json"
             result.to_json(out_json)
@@ -215,9 +236,12 @@ def main():
                 print(f"Loading video trajectory from: {args.trajectory}")
                 video_traj = VideoTrajectoryResult.load(args.trajectory)
             elif args.video:
+                if not args.source:
+                    print("[ERROR] --source is required when extracting from --video", file=sys.stderr)
+                    sys.exit(1)
                 print(f"Extracting trajectory from video: {args.video}")
                 cfg = TrackerConfig(color_preset=args.color)
-                video_traj = extract_trajectory_from_video(args.video, config=cfg)
+                video_traj = extract_trajectory_from_video(args.video, config=cfg, data_source=args.source)
             else:
                 print("[ERROR] Must specify either --trajectory <path.json> or --video <path.mp4>", file=sys.stderr)
                 sys.exit(1)
@@ -248,6 +272,8 @@ def main():
                 physical_controller_id=args.controller,
                 robot_model=args.robot_model,
                 shape_projection_plane=args.plane,
+                physical_executed_by_robot_ci_policy=args.same_policy_on_robot,
+                image_axes=args.image_axes,
             )
 
             # 5. Persist comparison report
@@ -263,6 +289,7 @@ def main():
             print(f"  Scenario:            {report.scenario_id}")
             print(f"  Simulation Policy:   {report.sim_policy_id} ({report.provenance.get('sim_backend')})")
             print(f"  Physical Controller: {report.physical_controller_id}")
+            print(f"  Data Source:         {report.provenance.get('data_source')}")
             print(f"  Coordinate System:   {report.coordinate_system}")
             print(f"  Measurement Units:   {report.units}")
             print(f"  Tracking Coverage:   {report.metrics.get('tracking_coverage') * 100:.1f}% ({report.metrics.get('video_frames_detected')}/{report.metrics.get('video_frames_total')} frames)")

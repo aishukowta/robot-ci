@@ -338,3 +338,40 @@ class TestHardwareReadinessAudit:
         assert saved_data["status"] == "READY_WITH_WARNINGS"
         assert saved_data["is_fake_transport"] is True
 
+
+
+# ---------------------------------------------------------------------------
+# Audit hardening (B4): example configs, scaffold transports, E-stop
+# ---------------------------------------------------------------------------
+
+def test_example_config_always_blocks():
+    import json
+    raw = json.load(open("config/example_franka_panda_config.json", encoding="utf-8"))
+    cfg = HardwareConfig()
+    for k, v in raw.items():
+        if hasattr(cfg, k):
+            setattr(cfg, k, v)
+    t = FakeRobotTransport()
+    t.connect()
+    rep = audit_hardware_readiness(config=cfg, transport=t)
+    assert rep.status == HardwareReadinessStatus.BLOCKED
+    assert any("EXAMPLE" in b for b in rep.blockers)
+
+
+def test_ros2_scaffold_is_blocker_and_does_not_claim_success():
+    t = ROS2RobotTransport()
+    assert t.is_scaffold is True
+    assert t.request_safe_stop() is False
+
+
+def test_real_transport_without_confirmed_estop_blocks(valid_hardware_config):
+    mock_transport = MagicMock()
+    mock_transport.transport_name = "MockRealRobotTransport"
+    mock_transport.is_scaffold = False
+    mock_transport.is_connected.return_value = True
+    mock_transport.request_safe_stop.return_value = True
+    mock_transport.is_safe_stop_confirmed.return_value = False
+    with patch("robot_ci.hardware.readiness.is_ros2_available", return_value=True):
+        rep = audit_hardware_readiness(config=valid_hardware_config, transport=mock_transport)
+    assert rep.status == HardwareReadinessStatus.BLOCKED
+    assert any("emergency stop" in b for b in rep.blockers)

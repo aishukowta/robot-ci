@@ -104,6 +104,9 @@ def sample_physical_video_report() -> dict:
         "provenance": {
             "video_file": "records/physical_ur5e_run.mp4",
             "video_source_is_synthetic": False,
+            "data_source": "robot_phone_recording",
+            "calibration_source": "measured",
+            "calibration_matches_video_size": True,
         },
     }
 
@@ -227,6 +230,7 @@ def test_raw_vs_aligned_metric_interpretation(sample_ci_passing_result):
         "provenance": {
             "video_file": "records/phys_robot.mp4",
             "video_source_is_synthetic": False,
+            "data_source": "robot_phone_recording",
         },
     }
 
@@ -251,3 +255,45 @@ def test_genuinely_inconclusive_case():
     assert report.category == DiagnosisCategory.INCONCLUSIVE_INSUFFICIENT_EVIDENCE
     assert any("synthetic test fixtures cannot qualify" in w for w in report.data_quality_warnings)
     assert any("Baseline-vs-candidate simulation policy regression results are missing" in m for m in report.missing_evidence)
+
+
+# ---------------------------------------------------------------------------
+# Provenance hardening (audit findings B1.2, B1.5, B1.6)
+# ---------------------------------------------------------------------------
+
+def test_renamed_synthetic_report_is_not_physical(sample_ci_regression_result, sample_physical_video_report):
+    """A report without a declared robot data source is never physical, whatever the file is called."""
+    rep = dict(sample_physical_video_report)
+    rep["provenance"] = {"video_file": "results/videos/lab_run_01.mp4", "video_source_is_synthetic": False}
+    report = evaluate_diagnosis(ci_result=sample_ci_regression_result, video_report=rep)
+    assert report.category == DiagnosisCategory.POLICY_REGRESSION_LIKELY
+    assert all(not e.is_physical_hardware for e in report.evidence_sources)
+
+
+def test_handheld_marker_is_not_robot_evidence(sample_ci_passing_result, sample_physical_video_report):
+    rep = dict(sample_physical_video_report)
+    rep["provenance"] = dict(rep["provenance"], data_source="handheld_marker_recording")
+    report = evaluate_diagnosis(ci_result=sample_ci_passing_result, video_report=rep)
+    assert report.category == DiagnosisCategory.NO_REGRESSION_DETECTED
+    assert any("Hand-held marker" in w for w in report.data_quality_warnings)
+
+
+def test_synthetic_calibration_not_accepted(sample_ci_passing_result, sample_physical_video_report):
+    rep = dict(sample_physical_video_report)
+    rep["provenance"] = dict(rep["provenance"], calibration_source="synthetic_fixture")
+    report = evaluate_diagnosis(ci_result=sample_ci_passing_result, video_report=rep)
+    assert report.category != DiagnosisCategory.SIM_TO_REAL_MISMATCH_LIKELY
+    assert any("calibration source" in w for w in report.data_quality_warnings)
+
+
+def test_scenario_mismatch_not_combined(sample_physical_video_report):
+    ci = {
+        "run_id": "r1", "overall_status": "PASS", "simulator_name": "mock",
+        "baseline_policy_version": "v1.0-baseline", "candidate_policy_version": "v2.0-candidate",
+        "scenario_ids": ["pick_and_place_easy"],
+        "regression_findings": [{"metric_name": "success_rate", "regression_detected": False}],
+    }
+    report = evaluate_diagnosis(ci_result=ci, video_report=sample_physical_video_report)
+    assert report.category == DiagnosisCategory.NO_REGRESSION_DETECTED
+    assert any("not part of CI run scenarios" in w for w in report.data_quality_warnings)
+    assert report.evidence_sources[0].provenance == "MOCK_SIMULATION"

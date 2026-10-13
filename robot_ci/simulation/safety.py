@@ -36,6 +36,10 @@ class HardwareConfig:
     command_topic: Optional[str] = None
     driver_type: Optional[str] = None
     driver_configured: bool = False
+    # True for illustrative configs shipped with the repo (e.g. public Franka
+    # Panda values). The readiness checker always BLOCKS example configs.
+    is_example: bool = False
+    note: Optional[str] = None
 
 class HardwareSafetyValidator:
     """Software safety validator enforcing workspace limits, joint bounds, and numeric integrity."""
@@ -64,11 +68,14 @@ class HardwareSafetyValidator:
         if not np.all(np.isfinite(arr)):
             raise SafetyValidationError(f"Invalid non-finite values in action command: {arr}.")
 
-        # Check maximum delta step size limit
+        # Check maximum delta step size limit (the configured value IS the limit)
         delta_mag = float(np.linalg.norm(arr[0:3]))
-        max_allowed = self.config.max_step_size * 2.0  # 2x safety ceiling
+        max_allowed = float(self.config.max_step_size)
         if delta_mag > max_allowed:
             raise SafetyValidationError(f"Action delta magnitude ({delta_mag:.4f}m) exceeds safety limit ({max_allowed:.4f}m).")
+
+        if not (0.0 <= float(arr[3]) <= 1.0):
+            raise SafetyValidationError(f"Gripper command {float(arr[3]):.4f} outside allowed range [0, 1].")
 
         return arr
 

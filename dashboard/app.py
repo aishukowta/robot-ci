@@ -605,11 +605,18 @@ def render_section_b_real_to_sim(results_dir: str = "results") -> None:
 
     video_path = None
     trajectory_json_path = None
+    upload_source = "synthetic_fixture"
 
     col_inp, col_cfg = st.columns([1, 1])
 
     with col_inp:
         if input_mode == "🎥 Upload Video File (.mp4, .mov)":
+            upload_source_label = st.selectbox(
+                "What does this recording show? (required for provenance)",
+                ["Robot arm moving (robot_phone_recording)", "Hand-held marker, no robot (handheld_marker_recording)"],
+                key="r2s_upload_source",
+            )
+            upload_source = "robot_phone_recording" if upload_source_label.startswith("Robot") else "handheld_marker_recording"
             uploaded = st.file_uploader("Upload Phone Video Recording", type=["mp4", "mov", "avi", "mkv"])
             if uploaded:
                 save_dir = Path(results_dir) / "telemetry"
@@ -662,7 +669,7 @@ def render_section_b_real_to_sim(results_dir: str = "results") -> None:
                             min_contour_area=min_area,
                             apply_morphology=apply_morph,
                         )
-                        res = extract_trajectory_from_video(video_path, config=cfg)
+                        res = extract_trajectory_from_video(video_path, config=cfg, data_source=upload_source)
                         st.session_state["extracted_video_traj"] = res
                         st.success(f"Extracted {res.detected_count}/{res.total_frames} frames ({res.detection_rate * 100:.1f}% coverage).")
                     except Exception as e:
@@ -678,10 +685,15 @@ def render_section_b_real_to_sim(results_dir: str = "results") -> None:
         st.markdown('<div class="rci-section"><h3>Trajectory Observation Preview</h3></div>', unsafe_allow_html=True)
 
         # Provenance Banner
-        if v_traj.is_synthetic or v_traj.video_metadata.is_synthetic:
+        _src = getattr(v_traj, "data_source", "unspecified")
+        if v_traj.is_synthetic or v_traj.video_metadata.is_synthetic or _src == "synthetic_fixture":
             st.info("ℹ️ **DATA PROVENANCE: SYNTHETIC TEST FIXTURE** — Video is an algorithmic test fixture, not real physical hardware.")
+        elif _src == "robot_phone_recording":
+            st.warning("📹 **DATA PROVENANCE: ROBOT PHONE RECORDING** — Uncalibrated 2D monocular tracking of a physical robot.")
+        elif _src == "handheld_marker_recording":
+            st.info("✋ **DATA PROVENANCE: HAND-HELD MARKER RECORDING** — Real camera footage, but NOT a robot. Validates tracking only.")
         else:
-            st.warning("📹 **DATA PROVENANCE: PHYSICAL VIDEO RECORDING** — Uncalibrated 2D monocular tracking.")
+            st.warning(f"❔ **DATA PROVENANCE: {str(_src).upper()}** — Not declared as a robot recording; never treated as physical evidence.")
 
         p1, p2, p3, p4 = st.columns(4)
         p1.metric("Total Frames", v_traj.total_frames)
@@ -754,7 +766,13 @@ def render_section_b_real_to_sim(results_dir: str = "results") -> None:
 
     with col_sim2:
         phys_controller = st.text_input("Physical Controller Identifier", value="human_teleop", key="r2s_controller")
-        robot_model = st.text_input("Robot Model (if known)", value="ur5e", key="r2s_robot_model")
+        robot_model = st.text_input("Robot Model (if known)", value="unknown_robot", key="r2s_robot_model")
+        same_policy = st.checkbox(
+            "The physical robot executed this exact Robot CI policy",
+            value=False,
+            key="r2s_same_policy",
+            help="Only tick if the robot ran the policy exported by Robot CI. Teleoperation, pendant or vendor demo programs do NOT qualify. The claim is recorded as user-declared.",
+        )
         comp_mode_choice = st.radio(
             "Comparison Mode",
             [
@@ -776,6 +794,10 @@ def render_section_b_real_to_sim(results_dir: str = "results") -> None:
             key="r2s_calib_src",
         )
         if calib_source == "Use Synthetic Side-View Calibration Fixture":
+            _vsrc = getattr(v_traj, "data_source", "unspecified") if v_traj is not None else "unspecified"
+            if _vsrc != "synthetic_fixture":
+                st.error("The synthetic calibration fixture can only be used with the synthetic video fixture. Upload a measured calibration for real recordings.")
+                st.stop()
             st.info("ℹ️ Using standard synthetic camera calibration fixture (`tests/fixtures/synthetic_camera_calibration.json`).")
             fixture_calib_path = Path("tests/fixtures/synthetic_camera_calibration.json")
             if fixture_calib_path.exists():
@@ -794,7 +816,9 @@ def render_section_b_real_to_sim(results_dir: str = "results") -> None:
     else:
         shape_plane = st.selectbox("Shape Projection Plane", ["xy (Horizontal)", "xz (Frontal)", "yz (Side)"], index=0, key="r2s_plane")
         shape_plane_key = shape_plane[:2]
-        st.info("ℹ️ Mode B normalizes both trajectories to screen space $[0, 1]$ and performs optimal 2D Procrustes rigid alignment. Metrics are dimensionless.")
+        image_axes = st.radio("Image vertical axis", ["v_up", "v_down"], index=0, horizontal=True, key="r2s_image_axes",
+                              help="v_up flips the image's downward v axis so it points up like the simulation axes (correct for normal side views).")
+        st.info("ℹ️ Mode B centres both paths, scales each by one uniform factor (aspect ratio preserved) and applies rotation-only 2D Procrustes alignment. A mirror check is reported separately. Metrics are dimensionless.")
 
     # -----------------------------------------------------------------------
     # Step 8–10: Run Comparison & Inspect Report
@@ -826,6 +850,8 @@ def render_section_b_real_to_sim(results_dir: str = "results") -> None:
                         physical_controller_id=phys_controller,
                         robot_model=robot_model,
                         shape_projection_plane=shape_plane_key if comp_mode_choice.startswith("Mode B") else "xy",
+                        physical_executed_by_robot_ci_policy=same_policy,
+                        image_axes=(image_axes if comp_mode_choice.startswith("Mode B") else "v_up"),
                     )
                     st.session_state["comparison_report"] = report
                     st.success(f"Trajectory comparison complete! (Report ID: {report.report_id})")
