@@ -1,6 +1,6 @@
 """Robot CI - Streamlit Results & Interactive Telemetry Dashboard.
 
-Two Primary Sections:
+Sections (D = handwriting robot):
 - Section A: Policy Regression (CI test runs, regression findings, interactive simulation, and offline telemetry)
 - Section B: Real-to-Simulation (Video trajectory extraction, PyBullet rollout comparison, calibrated projection, shape-only alignment, and structured reports)
 """
@@ -21,6 +21,9 @@ from robot_ci.policies.registry import get_policy
 from robot_ci.scenarios.manager import ScenarioManager
 from robot_ci.simulation.pybullet_sim import PyBulletSimulator
 from robot_ci.replay.engine import ReplayEngine
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from writing_section import render_section_d_writing  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -1214,6 +1217,7 @@ def main():
             "📈 Section A: Policy Regression",
             "🎥 Section B: Real-to-Simulation",
             "🩺 Section C: Evidence-Based Diagnosis",
+            "✍️ Section D: Handwriting Robot",
         ],
         index=0,
         key="app_main_section",
@@ -1223,6 +1227,8 @@ def main():
         render_section_a_policy_regression(results_dir)
     elif app_section == "🎥 Section B: Real-to-Simulation":
         render_section_b_real_to_sim(results_dir)
+    elif app_section == "✍️ Section D: Handwriting Robot":
+        render_section_d_writing(results_dir)
     else:
         render_section_c_diagnosis(results_dir)
 

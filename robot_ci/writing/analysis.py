@@ -613,8 +613,8 @@ def analyze_recording(inp: AnalysisInputs, out_dir: Union[str, Path] = "results/
         ],
     }
     path = out / "report.json"
-    path.write_text(json.dumps(report, indent=2, default=_jd), encoding="utf-8")
     report["saved_to"] = str(path)
+    path.write_text(json.dumps(report, indent=2, default=_jd), encoding="utf-8")
     return report
 
 
