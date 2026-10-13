@@ -1,5 +1,5 @@
 {
-  "report_id": "48e9ddeb",
+  "report_id": "20e7b4af",
   "comparison_mode": "SHAPE_ONLY_2D",
   "scenario_id": "reach_simple",
   "sim_policy_id": "baseline",
@@ -13,52 +13,86 @@
     "video_frames_total": 30,
     "video_frames_detected": 29,
     "video_duration_seconds": 1.0,
-    "sim_duration_seconds": 0.7,
-    "timing_difference_seconds": 0.3,
-    "video_path_length": 1.7588,
-    "sim_path_length": 1.4182,
-    "mean_trajectory_deviation": 0.2687,
-    "rms_trajectory_deviation": 0.328,
-    "max_trajectory_deviation": 0.8065,
-    "dtw_cost": 13.3195,
-    "dtw_average_step_distance": 0.2612,
+    "sim_duration_seconds": 0.3,
+    "timing_difference_seconds": 0.7,
+    "video_path_length": 1.1868,
+    "sim_path_length": 1.0016,
+    "raw_mean_trajectory_deviation": 0.5704,
+    "raw_rms_trajectory_deviation": 0.5887,
+    "raw_max_trajectory_deviation": 0.874,
+    "mean_trajectory_deviation": 0.1991,
+    "rms_trajectory_deviation": 0.2397,
+    "max_trajectory_deviation": 0.5873,
+    "dtw_cost": 9.8484,
+    "dtw_average_step_distance": 0.1894,
     "resampled_points_count": 50
   },
   "alignment_details": {
-    "method": "normalized_progress_resampling_with_2d_procrustes",
-    "projection_plane": "xy",
-    "sim_normalization_bounds": {
-      "min": [
-        0.3,
-        -0.0
+    "projection_plane": "xz",
+    "image_axes": "v_up",
+    "normalization": "bounding_box_centre_and_single_uniform_scale (aspect ratio preserved)",
+    "video_normalization": {
+      "centre": [
+        0.50134,
+        0.502085
       ],
-      "max": [
-        0.4728,
-        0.1734
-      ]
+      "scale": 0.59693
     },
+    "sim_normalization_m": {
+      "centre": [
+        0.386406,
+        0.300355
+      ],
+      "scale": 0.172825
+    },
+    "resampled_points_count": 50,
+    "method": "uniform_normalization_progress_resampling_2d_procrustes_rotation_only",
     "procrustes_transform": {
       "source_centroid": [
-        0.5031,
-        0.4984
+        0.003,
+        -0.0008
       ],
       "target_centroid": [
-        0.6042,
-        0.571
+        0.1042,
+        0.0003
       ],
       "translation": [
-        0.1011,
-        0.0726
+        0.1012,
+        0.0011
       ],
-      "rotation_degrees": -147.43,
-      "scale_factor": 1.106
+      "rotation_degrees": 103.27,
+      "scale_factor": 0.4455,
+      "reflection_applied": false
     },
-    "resampled_points_count": 50
+    "reflection_check": {
+      "aligned_rms_with_reflection": 0.2377,
+      "transform": {
+        "source_centroid": [
+          0.003,
+          -0.0008
+        ],
+        "target_centroid": [
+          0.1042,
+          0.0003
+        ],
+        "translation": [
+          0.1012,
+          0.0011
+        ],
+        "rotation_degrees": 104.21,
+        "scale_factor": 0.4507,
+        "reflection_applied": true
+      }
+    }
   },
   "provenance": {
-    "video_file": "tests\\fixtures\\synthetic_phone_recording.mp4",
-    "video_source_is_synthetic": false,
-    "sim_run_id": "f0a0cc16",
+    "video_file": "tests/fixtures/synthetic_phone_recording.mp4",
+    "data_source": "synthetic_fixture",
+    "calibration_source": null,
+    "calibration_matches_video_size": null,
+    "matched_policy_claim": "none",
+    "video_source_is_synthetic": true,
+    "sim_run_id": "2b1acdc5",
     "sim_backend": "pybullet",
     "sim_seed": 42,
     "sim_success": true,
@@ -66,7 +100,8 @@
   },
   "calibration_metadata": null,
   "warnings": [
-    "Cross-controller behavioural comparison: physical controller 'human_teleop' differs from simulation policy 'baseline'."
+    "Cross-controller behavioural comparison: physical controller 'human_teleop' differs from simulation policy 'baseline'.",
+    "Alignment impact notice: 2D Procrustes rotation/scale alignment reduced deviation from 0.5887 to 0.2397 (59.3% reduction). Check raw vs aligned deviations."
   ],
   "unavailable_metrics": [
     "joint_angle_error (requires internal robot encoder/joint-state telemetry)",
@@ -79,5 +114,5 @@
     "Visual tracking measurements are extracted in 2D image coordinates (pixel [u, v] and normalized screen-space [u_norm, v_norm]) from an uncalibrated camera recording. These measurements DO NOT represent metric 3D Cartesian coordinates (meters), joint angles, contact forces, or physical robot safety, and are subject to perspective distortion, lens distortion, monocular parallax, camera motion, and visual occlusion.",
     "SHAPE-ONLY COMPARISON: Camera calibration is unavailable. Trajectories are normalized to [0, 1] in screen space and aligned by geometric shape. Deviations are strictly dimensionless normalized units, NOT physical meters and NOT calibrated camera pixels."
   ],
-  "created_at": "2026-10-11T15:34:47.159657+00:00"
+  "created_at": "2026-10-13T12:04:21.092404+00:00"
 }

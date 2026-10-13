@@ -1,10 +1,10 @@
 {
-  "report_id": "efda9240",
+  "report_id": "f34ad16a",
   "comparison_mode": "CALIBRATED_PROJECTION",
   "scenario_id": "reach_simple",
   "sim_policy_id": "baseline",
-  "physical_controller_id": "baseline",
-  "comparison_type": "matched_policy_verification",
+  "physical_controller_id": "human_teleop",
+  "comparison_type": "cross_controller_behavioural_comparison",
   "robot_model": "unknown_robot",
   "coordinate_system": "camera_image_pixel_space",
   "units": "pixels (px)",
@@ -13,10 +13,13 @@
     "video_frames_total": 30,
     "video_frames_detected": 29,
     "video_duration_seconds": 1.0,
-    "sim_duration_seconds": 0.7,
-    "timing_difference_seconds": 0.3,
+    "sim_duration_seconds": 0.3,
+    "timing_difference_seconds": 0.7,
     "video_path_length": 436.8995,
     "sim_path_length": 68.843,
+    "raw_mean_trajectory_deviation": 81.4558,
+    "raw_rms_trajectory_deviation": 86.5256,
+    "raw_max_trajectory_deviation": 113.9621,
     "mean_trajectory_deviation": 81.4558,
     "rms_trajectory_deviation": 86.5256,
     "max_trajectory_deviation": 113.9621,
@@ -43,9 +46,13 @@
     "points_in_front_of_camera": "7/7"
   },
   "provenance": {
-    "video_file": "tests\\fixtures\\synthetic_phone_recording.mp4",
-    "video_source_is_synthetic": false,
-    "sim_run_id": "cf59131d",
+    "video_file": "tests/fixtures/synthetic_phone_recording.mp4",
+    "data_source": "synthetic_fixture",
+    "calibration_source": "synthetic_fixture",
+    "calibration_matches_video_size": true,
+    "matched_policy_claim": "none",
+    "video_source_is_synthetic": true,
+    "sim_run_id": "f9da6d86",
     "sim_backend": "pybullet",
     "sim_seed": 42,
     "sim_success": true,
@@ -89,9 +96,13 @@
     ],
     "camera_model_name": "synthetic_side_view",
     "calibration_date": null,
-    "notes": "Synthetic test calibration fixture"
+    "notes": "Synthetic test calibration fixture",
+    "source": "synthetic_fixture"
   },
-  "warnings": [],
+  "warnings": [
+    "Cross-controller behavioural comparison: physical controller 'human_teleop' differs from simulation policy 'baseline'.",
+    "Calibration source is 'synthetic_fixture', not a measured calibration of the recording camera; pixel errors cannot be treated as physical evidence."
+  ],
   "unavailable_metrics": [
     "joint_angle_error (requires internal robot encoder/joint-state telemetry)",
     "3d_cartesian_error_meters (monocular video lacks metric depth ground truth)",
@@ -102,5 +113,5 @@
   "disclaimers": [
     "CALIBRATED PROJECTION: Simulated 3D positions are projected into camera pixel space using verified pinhole camera calibration. Metric errors are reported in 2D image pixels (px), NOT 3D meters. Pixel reprojection error is sensitive to camera extrinsics and focal length."
   ],
-  "created_at": "2026-10-11T15:35:23.884100+00:00"
+  "created_at": "2026-10-13T12:04:23.354173+00:00"
 }

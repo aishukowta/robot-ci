@@ -1,6 +1,7 @@
 {
+  "data_source": "synthetic_fixture",
   "video_metadata": {
-    "file_path": "tests\\fixtures\\synthetic_phone_recording.mp4",
+    "file_path": "tests/fixtures/synthetic_phone_recording.mp4",
     "file_format": ".mp4",
     "total_frames": 30,
     "fps": 30.0,
@@ -8,7 +9,7 @@
     "width": 320,
     "height": 240,
     "codec": "FMP4",
-    "is_synthetic": false
+    "is_synthetic": true
   },
   "tracker_config": {
     "color_preset": "red",
@@ -34,8 +35,8 @@
   },
   "coordinate_space": "NORMALIZED_IMAGE",
   "camera_calibrated": false,
-  "is_synthetic": false,
-  "created_at": "2026-10-11T09:53:05.396502+00:00",
+  "is_synthetic": true,
+  "created_at": "2026-10-13T12:04:18.823557+00:00",
   "disclaimer": "Visual tracking measurements are extracted in 2D image coordinates (pixel [u, v] and normalized screen-space [u_norm, v_norm]) from an uncalibrated camera recording. These measurements DO NOT represent metric 3D Cartesian coordinates (meters), joint angles, contact forces, or physical robot safety, and are subject to perspective distortion, lens distortion, monocular parallax, camera motion, and visual occlusion.",
   "notes": null,
   "observations": [
