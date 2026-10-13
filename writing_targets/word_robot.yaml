@@ -1,0 +1,9 @@
+target_id: word_robot
+kind: text
+content: ROBOT
+origin_mm: [55, 60]
+height_mm: 18
+page: A4
+seed: 12
+description: Mixed curves (R, O, B) and straight strokes (T).
+tags: [word, letters]

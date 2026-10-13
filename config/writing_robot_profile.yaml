@@ -1,0 +1,45 @@
+# =============================================================================
+# Handwriting robot hardware profile  --  FILL THIS IN AT THE LAB
+# =============================================================================
+# Robot CI never connects to the robot. It only writes files (SVG / G-code /
+# CSV) that the robot's own software executes. This profile tells the exporter
+# how page coordinates map to the robot and how to raise/lower the pen.
+#
+# Until is_configured is true, G-code export is refused (SVG, CSV and the plan
+# JSON are always available, because they do not drive the machine directly).
+#
+# Page frame used by Robot CI: millimetres, origin = TOP-LEFT corner of the
+# paper, x to the right, y DOWN the page.
+# =============================================================================
+
+robot_name: "UNKNOWN - fill in model at the lab"
+is_configured: false
+
+# How the robot is driven. One of:
+#   svg_import   - vendor app imports an SVG drawing (the app plans its own speeds)
+#   gcode        - G-code sent by a sender program (GRBL / Marlin style); feeds honoured
+#   other        - anything else (export CSV and adapt)
+execution_mode: svg_import
+
+# ---- coordinate mapping: page mm -> robot/machine mm ----
+coordinate_transform:
+  machine_origin: top_left      # top_left | bottom_left  (bottom_left flips y: y_m = page_height - y)
+  offset_mm: [0.0, 0.0]         # where the page's origin sits in machine coordinates
+  swap_xy: false                # true if the machine's X axis runs down the page
+  scale: 1.0
+
+# Machine travel limits in MACHINE coordinates (mm). Export is refused if any point falls outside.
+# Leave null to only check against the page size.
+workspace_mm: null              # e.g. [[0, 0], [210, 297]]
+
+# ---- motion limits (used for G-code) ----
+max_draw_feed_mm_s: 40.0
+max_travel_feed_mm_s: 80.0
+
+# ---- pen actuation (G-code only) ----
+pen_mode: servo                 # servo (M3 S...) | z_axis (G1 Z...)
+pen_down_command: "M3 S30"      # servo example; for z_axis use e.g. "G1 Z0 F600"
+pen_up_command: "M3 S90"        # servo example; for z_axis use e.g. "G1 Z5 F600"
+pen_dwell_s: 0.15               # pause after each pen change (G4)
+gcode_header: ["G21", "G90"]    # millimetres, absolute coordinates
+gcode_footer: ["G0 X0 Y0"]

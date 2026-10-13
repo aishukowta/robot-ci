@@ -1,0 +1,59 @@
+# =============================================================================
+# Robot CI - Handwriting regression thresholds
+# =============================================================================
+# direction:  increase = higher is worse, decrease = lower is worse, monitor = report only
+# comparison: absolute (units of the metric) or relative (fraction of baseline)
+# A regression is flagged only if BOTH hold:
+#   1. the mean change in the bad direction is >= threshold, and
+#   2. with >= 3 trials per policy, the bootstrap 95% CI of the change excludes 0
+#      (so one noisy trial cannot trigger a regression on its own).
+# Units: mm, seconds, fractions (0..1), counts.
+# =============================================================================
+
+trajectory_error_mean_mm:
+  threshold: 0.30
+  direction: increase
+  comparison: absolute
+  severity_levels: {minor: 0.30, major: 1.00, critical: 2.00}
+
+trajectory_error_max_mm:
+  threshold: 0.75
+  direction: increase
+  comparison: absolute
+  severity_levels: {minor: 0.75, major: 2.00, critical: 4.00}
+
+path_coverage:
+  threshold: 0.05
+  direction: decrease
+  comparison: absolute
+  severity_levels: {minor: 0.05, major: 0.15, critical: 0.30}
+
+writing_accuracy:
+  threshold: 0.05
+  direction: decrease
+  comparison: absolute
+  severity_levels: {minor: 0.05, major: 0.15, critical: 0.30}
+
+execution_time_s:
+  threshold: 0.10
+  direction: increase
+  comparison: relative
+  severity_levels: {minor: 0.10, major: 0.25, critical: 0.50}
+
+path_efficiency_deviation:
+  threshold: 0.03
+  direction: increase
+  comparison: absolute
+  severity_levels: {minor: 0.03, major: 0.08, critical: 0.15}
+
+repeatability_mm:
+  threshold: 0.20
+  direction: increase
+  comparison: absolute
+  severity_levels: {minor: 0.20, major: 0.50, critical: 1.00}
+
+safety_events:
+  threshold: 1.0
+  direction: increase
+  comparison: absolute
+  severity_levels: {minor: 1.0, major: 3.0, critical: 5.0}

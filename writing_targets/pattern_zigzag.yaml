@@ -1,0 +1,9 @@
+target_id: pattern_zigzag
+kind: pattern
+content: zigzag
+origin_mm: [75, 60]
+height_mm: 60
+page: A4
+seed: 20
+description: Geometric pattern 'zigzag' in a 60 mm box.
+tags: [pattern]

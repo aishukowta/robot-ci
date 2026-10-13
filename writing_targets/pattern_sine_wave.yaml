@@ -1,0 +1,9 @@
+target_id: pattern_sine_wave
+kind: pattern
+content: sine_wave
+origin_mm: [75, 60]
+height_mm: 60
+page: A4
+seed: 20
+description: Geometric pattern 'sine_wave' in a 60 mm box.
+tags: [pattern]

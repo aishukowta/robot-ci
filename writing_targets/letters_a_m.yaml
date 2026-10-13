@@ -1,0 +1,9 @@
+target_id: letters_a_m
+kind: text
+content: ABCDEFGHIJKLM
+origin_mm: [25, 70]
+height_mm: 11
+page: A4
+seed: 14
+description: First half of the alphabet.
+tags: [letters]

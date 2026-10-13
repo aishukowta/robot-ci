@@ -1,0 +1,9 @@
+target_id: letters_n_z
+kind: text
+content: NOPQRSTUVWXYZ
+origin_mm: [25, 70]
+height_mm: 11
+page: A4
+seed: 15
+description: Second half of the alphabet.
+tags: [letters]

@@ -1,0 +1,9 @@
+target_id: pattern_square
+kind: pattern
+content: square
+origin_mm: [75, 60]
+height_mm: 60
+page: A4
+seed: 21
+description: Geometric pattern 'square' in a 60 mm box.
+tags: [pattern]

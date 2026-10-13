@@ -1,0 +1,9 @@
+target_id: digits_0_9
+kind: text
+content: "0123456789"
+origin_mm: [45, 70]
+height_mm: 14
+page: A4
+seed: 13
+description: All ten digits.
+tags: [digits]

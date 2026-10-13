@@ -1,0 +1,9 @@
+target_id: word_hello
+kind: text
+content: HELLO
+origin_mm: [60, 60]
+height_mm: 18
+page: A4
+seed: 11
+description: Common word with straight strokes, a closed curve (O) and repeated letters (L L).
+tags: [word, letters]

@@ -1,0 +1,9 @@
+target_id: pattern_circle
+kind: pattern
+content: circle
+origin_mm: [75, 60]
+height_mm: 60
+page: A4
+seed: 20
+description: Geometric pattern 'circle' in a 60 mm box.
+tags: [pattern]
