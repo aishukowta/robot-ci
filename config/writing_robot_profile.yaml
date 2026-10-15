@@ -12,14 +12,14 @@
 # paper, x to the right, y DOWN the page.
 # =============================================================================
 
-robot_name: "UNKNOWN - fill in model at the lab"
+robot_name: "Lab rack-and-pinion pen plotter (3 x 28BYJ-48 + ULN2003, Arduino Uno, standalone sketch)"
 is_configured: false
 
 # How the robot is driven. One of:
 #   svg_import   - vendor app imports an SVG drawing (the app plans its own speeds)
 #   gcode        - G-code sent by a sender program (GRBL / Marlin style); feeds honoured
 #   other        - anything else (export CSV and adapt)
-execution_mode: svg_import
+execution_mode: other
 
 # ---- coordinate mapping: page mm -> robot/machine mm ----
 coordinate_transform:

@@ -1,0 +1,345 @@
+{
+  "experiment": "E11_physical_robot_experiment",
+  "simulation_run": {
+    "run_id": "98649adf",
+    "run_file": "results\\writing\\run_98649adf.json",
+    "backend": "pybullet",
+    "trials": 3,
+    "targets": ["word_hello", "pattern_square"]
+  },
+  "plans": [
+    {
+      "plan_index": 1,
+      "target_id": "word_hello",
+      "policy_name": "writing_baseline",
+      "policy_version": "w1.0-baseline",
+      "plan_hash": "4b69978ebb27afd1",
+      "plan_file": "results\\writing\\exports\\word_hello__writing_baseline__seed11__4b69978ebb27afd1\\plan.json",
+      "analysis_report_id": "94744d9e",
+      "analysis_report_file": "results\\writing\\real_to_sim\\analysis_94744d9e\\report.json",
+      "photo_used": "lab_recordings\\plan1_hello_baseline.jpeg",
+      "video_used": null,
+      "page_detection": {
+        "method": "auto",
+        "aspect_ratio": 1.4055,
+        "expected_aspect": 1.4143,
+        "aspect_error": 0.0062,
+        "manual_corners_used": null,
+        "corners_px": [
+          [117.81, 1152.49],
+          [102.51, 129.05],
+          [1483.52, 120.25],
+          [1519.66, 1077.5]
+        ],
+        "orientation_note": "Page orientation chosen by best match to the intended path: rotated 270 deg."
+      },
+      "intended_vs_real_aligned": {
+        "trajectory_error_mean_mm": 7.635500791557256,
+        "trajectory_error_max_mm": 137.08581062215015,
+        "trajectory_error_p95_mm": 25.297869917499565,
+        "path_coverage": 0.15886699507389163,
+        "writing_accuracy": 0.0,
+        "misread_characters": [
+          {"label": "H", "predicted": "T", "correct": false, "score": 0.0827, "margin": 0.005, "runner_up": "3"},
+          {"label": "E", "predicted": "9", "correct": false, "score": 0.121, "margin": 0.0056, "runner_up": "3"},
+          {"label": "L", "predicted": "I", "correct": false, "score": 0.0719, "margin": 0.0198, "runner_up": "1"},
+          {"label": "L", "predicted": "I", "correct": false, "score": 0.0663, "margin": 0.003, "runner_up": "1"},
+          {"label": "O", "predicted": "H", "correct": false, "score": 0.0612, "margin": 0.0002, "runner_up": "4"}
+        ]
+      },
+      "intended_vs_real_raw": {
+        "trajectory_error_mean_mm": 37.988244240955964,
+        "trajectory_error_max_mm": 220.19396690610563,
+        "trajectory_error_p95_mm": 88.27676228083304,
+        "path_coverage": 0.046798029556650245,
+        "writing_accuracy": 0.0
+      },
+      "real_vs_sim": {
+        "symmetric_distance_raw_mm": 29.727161706730982,
+        "symmetric_distance_aligned_mm": 5.414770609357135,
+        "hausdorff_raw_mm": 220.2549584024737,
+        "hausdorff_aligned_mm": 137.1650957563227
+      },
+      "placement_correction": {
+        "rotation_deg": 90.812,
+        "translation_mm": [222.658, -54.175],
+        "translation_norm_mm": 229.154
+      },
+      "timing": {
+        "real_active_duration_s": null,
+        "sim_duration_s": 15.0667,
+        "nominal_plan_duration_s": 14.0525,
+        "comparable": false,
+        "timing_note": "No video provided (still photo used); execution time from video is null and not comparable."
+      },
+      "diagnosis": {
+        "category": "POLICY_REGRESSION_LIKELY",
+        "message": "Simulation shows a regression. Real-robot agreement could not be assessed from the available recording. Next step: Record the robot drawing the exported plan and upload the video/photo."
+      },
+      "warnings": [
+        "Large placement correction ({'rotation_deg': 90.812, 'translation_mm': [222.658, -54.175], 'translation_norm_mm': 229.154}). Wrong target, wrong page orientation, or the paper was far from the expected position.",
+        "Placement correction reduced the real-vs-sim distance from 29.73 to 5.41 mm. Most of the raw difference is where the paper/robot origin was, not stroke shape."
+      ],
+      "figures": {
+        "overlay_aligned": "docs/figures/E11/plan1_hello_baseline_overlay_aligned.png",
+        "rectified_page": "docs/figures/E11/plan1_hello_baseline_rectified_page.png"
+      }
+    },
+    {
+      "plan_index": 2,
+      "target_id": "word_hello",
+      "policy_name": "writing_candidate",
+      "policy_version": "w2.0-candidate",
+      "plan_hash": "9b7a63446cfded6b",
+      "plan_file": "results\\writing\\exports\\word_hello__writing_candidate__seed11__9b7a63446cfded6b\\plan.json",
+      "analysis_report_id": "fbbd1afb",
+      "analysis_report_file": "results\\writing\\real_to_sim\\analysis_fbbd1afb\\report.json",
+      "photo_used": "lab_recordings\\plan2_hello_candidate.jpeg",
+      "video_used": null,
+      "page_detection": {
+        "method": "auto",
+        "aspect_ratio": 1.4087,
+        "expected_aspect": 1.4143,
+        "aspect_error": 0.0039,
+        "manual_corners_used": null,
+        "corners_px": [
+          [84.4, 1133.59],
+          [99.88, 105.89],
+          [1511.35, 97.01],
+          [1545.06, 1107.66]
+        ],
+        "orientation_note": "Page orientation chosen by best match to the intended path: rotated 270 deg."
+      },
+      "intended_vs_real_aligned": {
+        "trajectory_error_mean_mm": 10.727012341457867,
+        "trajectory_error_max_mm": 102.73889137840065,
+        "trajectory_error_p95_mm": 31.436014209964927,
+        "path_coverage": 0.1958128078817734,
+        "writing_accuracy": 0.0,
+        "misread_characters": [
+          {"label": "H", "predicted": "9", "correct": false, "score": 0.1052, "margin": 0.0302, "runner_up": "P"},
+          {"label": "E", "predicted": "F", "correct": false, "score": 0.0542, "margin": 0.0174, "runner_up": "E"},
+          {"label": "L", "predicted": "T", "correct": false, "score": 0.0477, "margin": 0.0266, "runner_up": "4"},
+          {"label": "L", "predicted": "A", "correct": false, "score": 0.1266, "margin": 0.0061, "runner_up": "H"},
+          {"label": "O", "predicted": "4", "correct": false, "score": 0.0976, "margin": 0.0137, "runner_up": "T"}
+        ]
+      },
+      "intended_vs_real_raw": {
+        "trajectory_error_mean_mm": 64.58317436459761,
+        "trajectory_error_max_mm": 131.29144717105513,
+        "trajectory_error_p95_mm": 129.40455377028894,
+        "path_coverage": 0.0,
+        "writing_accuracy": 0.0
+      },
+      "real_vs_sim": {
+        "symmetric_distance_raw_mm": 49.75981911693191,
+        "symmetric_distance_aligned_mm": 7.1246156000467575,
+        "hausdorff_raw_mm": 130.6540767268765,
+        "hausdorff_aligned_mm": 103.0622059136593
+      },
+      "placement_correction": {
+        "rotation_deg": 91.464,
+        "translation_mm": [238.356, -62.052],
+        "translation_norm_mm": 246.3
+      },
+      "timing": {
+        "real_active_duration_s": null,
+        "sim_duration_s": 17.1667,
+        "nominal_plan_duration_s": 15.0858,
+        "comparable": false,
+        "timing_note": "No video provided (still photo used); execution time from video is null and not comparable."
+      },
+      "diagnosis": {
+        "category": "POLICY_REGRESSION_LIKELY",
+        "message": "Simulation shows a regression. Real-robot agreement could not be assessed from the available recording. Next step: Record the robot drawing the exported plan and upload the video/photo."
+      },
+      "warnings": [
+        "Large placement correction ({'rotation_deg': 91.464, 'translation_mm': [238.356, -62.052], 'translation_norm_mm': 246.3}). Wrong target, wrong page orientation, or the paper was far from the expected position.",
+        "Placement correction reduced the real-vs-sim distance from 49.76 to 7.12 mm. Most of the raw difference is where the paper/robot origin was, not stroke shape."
+      ],
+      "figures": {
+        "overlay_aligned": "docs/figures/E11/plan2_hello_candidate_overlay_aligned.png",
+        "rectified_page": "docs/figures/E11/plan2_hello_candidate_rectified_page.png"
+      }
+    },
+    {
+      "plan_index": 3,
+      "target_id": "pattern_square",
+      "policy_name": "writing_baseline",
+      "policy_version": "w1.0-baseline",
+      "plan_hash": "f9d9e3adaa619f3e",
+      "plan_file": "results\\writing\\exports\\pattern_square__writing_baseline__seed21__f9d9e3adaa619f3e\\plan.json",
+      "analysis_report_id": "77bd8aaf",
+      "analysis_report_file": "results\\writing\\real_to_sim\\analysis_77bd8aaf\\report.json",
+      "photo_used": "lab_recordings\\plan3_square_baseline.jpeg",
+      "video_used": null,
+      "page_detection": {
+        "method": "auto",
+        "aspect_ratio": 1.4078,
+        "expected_aspect": 1.4143,
+        "aspect_error": 0.0046,
+        "manual_corners_used": null,
+        "corners_px": [
+          [1372.37, 109.55],
+          [1377.62, 981.54],
+          [130.71, 1033.87],
+          [103.94, 118.8]
+        ],
+        "orientation_note": "Page orientation chosen by best match to the intended path: rotated 90 deg."
+      },
+      "intended_vs_real_aligned": {
+        "trajectory_error_mean_mm": 15.119282518316949,
+        "trajectory_error_max_mm": 27.270453129312962,
+        "trajectory_error_p95_mm": 24.950378065586712,
+        "path_coverage": 0.0,
+        "writing_accuracy": 1.0,
+        "misread_characters": []
+      },
+      "intended_vs_real_raw": {
+        "trajectory_error_mean_mm": 41.810155988950775,
+        "trajectory_error_max_mm": 80.39521518722367,
+        "trajectory_error_p95_mm": 75.16788390038639,
+        "path_coverage": 0.018730489073881373,
+        "writing_accuracy": 0.0
+      },
+      "real_vs_sim": {
+        "symmetric_distance_raw_mm": 32.37929386917564,
+        "symmetric_distance_aligned_mm": 14.46784871420289,
+        "hausdorff_raw_mm": 80.65285348102411,
+        "hausdorff_aligned_mm": 27.489258424381937
+      },
+      "placement_correction": {
+        "rotation_deg": -9.425,
+        "translation_mm": [5.638, -35.779],
+        "translation_norm_mm": 36.221
+      },
+      "timing": {
+        "real_active_duration_s": null,
+        "sim_duration_s": 11.0667,
+        "nominal_plan_duration_s": 11.0335,
+        "comparable": false,
+        "timing_note": "No video provided (still photo used); execution time from video is null and not comparable."
+      },
+      "diagnosis": {
+        "category": "POLICY_REGRESSION_LIKELY",
+        "message": "Simulation shows a regression. Real-robot agreement could not be assessed from the available recording. Next step: Record the robot drawing the exported plan and upload the video/photo."
+      },
+      "warnings": [
+        "Large placement correction ({'rotation_deg': -9.425, 'translation_mm': [5.638, -35.779], 'translation_norm_mm': 36.221}). Wrong target, wrong page orientation, or the paper was far from the expected position.",
+        "Placement correction reduced the real-vs-sim distance from 32.38 to 14.47 mm. Most of the raw difference is where the paper/robot origin was, not stroke shape."
+      ],
+      "figures": {
+        "overlay_aligned": "docs/figures/E11/plan3_square_baseline_overlay_aligned.png",
+        "rectified_page": "docs/figures/E11/plan3_square_baseline_rectified_page.png"
+      }
+    },
+    {
+      "plan_index": 4,
+      "target_id": "pattern_square",
+      "policy_name": "writing_candidate",
+      "policy_version": "w2.0-candidate",
+      "plan_hash": "2ab05ca5e98d11c6",
+      "plan_file": "results\\writing\\exports\\pattern_square__writing_candidate__seed21__2ab05ca5e98d11c6\\plan.json",
+      "analysis_report_id": "23e507a1",
+      "analysis_report_file": "results\\writing\\real_to_sim\\analysis_23e507a1\\report.json",
+      "photo_used": "lab_recordings\\plan4_square_candidate.jpeg",
+      "video_used": null,
+      "page_detection": {
+        "method": "auto",
+        "aspect_ratio": 1.4029,
+        "expected_aspect": 1.4143,
+        "aspect_error": 0.0081,
+        "manual_corners_used": null,
+        "corners_px": [
+          [1523.6, 145.57],
+          [1524.16, 1114.48],
+          [133.31, 1148.21],
+          [134.16, 134.97]
+        ],
+        "orientation_note": "Page orientation chosen by best match to the intended path: rotated 90 deg."
+      },
+      "intended_vs_real_aligned": {
+        "trajectory_error_mean_mm": 12.493762293139422,
+        "trajectory_error_max_mm": 50.56370869351073,
+        "trajectory_error_p95_mm": 31.19541239064458,
+        "path_coverage": 0.06659729448491156,
+        "writing_accuracy": 0.0,
+        "misread_characters": [
+          {"label": "square", "predicted": "circle", "correct": false, "score": 0.1687, "margin": 0.0009, "runner_up": "spiral"}
+        ]
+      },
+      "intended_vs_real_raw": {
+        "trajectory_error_mean_mm": 22.091285859866908,
+        "trajectory_error_max_mm": 88.12508865243768,
+        "trajectory_error_p95_mm": 49.5,
+        "path_coverage": 0.04058272632674298,
+        "writing_accuracy": 0.0
+      },
+      "real_vs_sim": {
+        "symmetric_distance_raw_mm": 20.39666174564951,
+        "symmetric_distance_aligned_mm": 14.194839767445297,
+        "hausdorff_raw_mm": 87.53156520193788,
+        "hausdorff_aligned_mm": 56.13150307202086
+      },
+      "placement_correction": {
+        "rotation_deg": 6.999,
+        "translation_mm": [0.451, -48.336],
+        "translation_norm_mm": 48.338
+      },
+      "timing": {
+        "real_active_duration_s": null,
+        "sim_duration_s": 13.3333,
+        "nominal_plan_duration_s": 11.4683,
+        "comparable": false,
+        "timing_note": "No video provided (still photo used); execution time from video is null and not comparable."
+      },
+      "diagnosis": {
+        "category": "POLICY_REGRESSION_LIKELY",
+        "message": "Simulation shows a regression. Real-robot agreement could not be assessed from the available recording. Next step: Record the robot drawing the exported plan and upload the video/photo."
+      },
+      "warnings": [
+        "Large placement correction ({'rotation_deg': 6.999, 'translation_mm': [0.451, -48.336], 'translation_norm_mm': 48.338}). Wrong target, wrong page orientation, or the paper was far from the expected position."
+      ],
+      "figures": {
+        "overlay_aligned": "docs/figures/E11/plan4_square_candidate_overlay_aligned.png",
+        "rectified_page": "docs/figures/E11/plan4_square_candidate_rectified_page.png"
+      }
+    }
+  ],
+  "comparisons": {
+    "hello": {
+      "target": "word_hello",
+      "baseline_plan_hash": "4b69978ebb27afd1",
+      "candidate_plan_hash": "9b7a63446cfded6b",
+      "metrics": {
+        "sim_trajectory_error_mean_mm": {"baseline": 0.06773990513018355, "candidate": 0.6112008536550397},
+        "sim_trajectory_error_max_mm": {"baseline": 0.2624358459228371, "candidate": 2.2223997480310356},
+        "sim_path_coverage": {"baseline": 1.0, "candidate": 0.8719211822660099},
+        "sim_writing_accuracy": {"baseline": 1.0, "candidate": 1.0},
+        "real_aligned_trajectory_error_mean_mm": {"baseline": 7.635500791557256, "candidate": 10.727012341457867},
+        "real_aligned_trajectory_error_max_mm": {"baseline": 137.08581062215015, "candidate": 102.73889137840065},
+        "real_aligned_path_coverage": {"baseline": 0.15886699507389163, "candidate": 0.1958128078817734},
+        "real_aligned_writing_accuracy": {"baseline": 0.0, "candidate": 0.0},
+        "real_vs_sim_symmetric_distance_aligned_mm": {"baseline": 5.414770609357135, "candidate": 7.1246156000467575}
+      },
+      "sim_to_paper_assessment": "For word_hello, the candidate policy has higher mean trajectory error in simulation (0.61 mm vs 0.07 mm) and this degradation is mirrored on paper: mean aligned trajectory error is larger for the candidate (10.73 mm vs 7.64 mm), and real-to-simulation discrepancy is larger (7.12 mm vs 5.41 mm). However, due to low path coverage on both physical drawings (<20%), neither baseline nor candidate achieved letter recognition (writing accuracy 0.0)."
+    },
+    "square": {
+      "target": "pattern_square",
+      "baseline_plan_hash": "f9d9e3adaa619f3e",
+      "candidate_plan_hash": "2ab05ca5e98d11c6",
+      "metrics": {
+        "sim_trajectory_error_mean_mm": {"baseline": 0.06709687029547716, "candidate": 1.903372573672059},
+        "sim_trajectory_error_max_mm": {"baseline": 0.2845594181936525, "candidate": 7.854490633403035},
+        "sim_path_coverage": {"baseline": 1.0, "candidate": 0.5150884495317378},
+        "sim_writing_accuracy": {"baseline": 1.0, "candidate": 0.0},
+        "real_aligned_trajectory_error_mean_mm": {"baseline": 15.119282518316949, "candidate": 12.493762293139422},
+        "real_aligned_trajectory_error_max_mm": {"baseline": 27.270453129312962, "candidate": 50.56370869351073},
+        "real_aligned_path_coverage": {"baseline": 0.0, "candidate": 0.06659729448491156},
+        "real_aligned_writing_accuracy": {"baseline": 1.0, "candidate": 0.0},
+        "real_vs_sim_symmetric_distance_aligned_mm": {"baseline": 14.46784871420289, "candidate": 14.194839767445297}
+      },
+      "sim_to_paper_assessment": "For pattern_square, the simulated regression is strikingly confirmed on paper in writing accuracy and peak error: baseline drew a recognizable square (writing accuracy 1.0, recognized as 'square'), whereas candidate failed completely (writing accuracy 0.0, misread as 'circle'). In addition, candidate's maximum trajectory error on paper was nearly double baseline (50.56 mm vs 27.27 mm), directly reflecting the severe shape distortion predicted by simulation."
+    }
+  }
+}
