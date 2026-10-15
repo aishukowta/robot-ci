@@ -65,7 +65,7 @@ def render_section_d_writing(results_dir: str = "results") -> None:
     )
     wdir = str(Path(results_dir) / "writing")
     tabs = st.tabs(["🖊️ Simulate", "📊 Regression (baseline vs candidate)", "📤 Export for robot",
-                    "🎥 Upload recording (real-to-sim)"])
+                    "🎥 Upload recording (real-to-sim)", "📸 E11 Lab Comparison (Zoomed-Out & Diff)"])
     with tabs[0]:
         _tab_simulate(wdir)
     with tabs[1]:
@@ -74,6 +74,8 @@ def render_section_d_writing(results_dir: str = "results") -> None:
         _tab_export(wdir)
     with tabs[3]:
         _tab_upload(wdir)
+    with tabs[4]:
+        _tab_e11_demonstration(wdir)
 
 
 # ---------------------------------------------------------------------------
@@ -371,8 +373,34 @@ def _tab_upload(wdir: str) -> None:
         st.markdown(f"{diag.summary_explanation}  \n**Next step:** {diag.recommended_next_step}")
     c1, c2 = st.columns([3, 2])
     with c1:
-        st.image(rep["files"]["overlay_page"], caption="Rectified page: grey intended, blue simulation, red real ink")
-        st.image(rep["files"]["overlay_aligned"], caption="After removing the paper placement offset")
+        target_id = rep.get("plan", {}).get("target_id", "")
+        policy_name = rep.get("plan", {}).get("policy_name", "")
+        demo_key = None
+        if target_id == "word_hello" and policy_name == "writing_baseline":
+            demo_key = "plan1_hello_baseline"
+        elif target_id == "word_hello" and policy_name == "writing_candidate":
+            demo_key = "plan2_hello_candidate"
+        elif target_id == "pattern_square" and policy_name == "writing_baseline":
+            demo_key = "plan3_square_baseline"
+        elif target_id == "pattern_square" and policy_name == "writing_candidate":
+            demo_key = "plan4_square_candidate"
+        demo_file = Path(f"docs/figures/E11_demonstration/{demo_key}_multi_panel_demo.png") if demo_key else None
+        if demo_file and demo_file.exists():
+            vmode = st.radio(
+                "Image visualization style",
+                ["✨ Clean Zoomed-Out View & Diff (No Overlap)", "Classic Cropped Overlay"],
+                horizontal=True,
+                key="wd_up_vmode",
+            )
+            if vmode.startswith("✨"):
+                st.image(str(demo_file), caption="1. Lab photo | 2. Simulation | 3. Physical robot drawing (scaled & upright) | 4. Deviation diff map")
+                st.caption("ℹ️ Ink is rotated upright, scaled to match simulation coordinates, and zoomed out to avoid clipping.")
+            else:
+                st.image(rep["files"]["overlay_page"], caption="Rectified page: grey intended, blue simulation, red real ink")
+                st.image(rep["files"]["overlay_aligned"], caption="After removing the paper placement offset")
+        else:
+            st.image(rep["files"]["overlay_page"], caption="Rectified page: grey intended, blue simulation, red real ink")
+            st.image(rep["files"]["overlay_aligned"], caption="After removing the paper placement offset")
     with c2:
         def fmt(v, n=3):
             return None if v is None else round(v, n)
@@ -410,3 +438,57 @@ def _tab_upload(wdir: str) -> None:
                        key="wd_up_dl")
     st.caption(f"Saved to {rep.get('saved_to', '-')}. Not measurable from video: "
                + "; ".join(rep.get("unmeasurable_from_video", [])))
+
+
+def _tab_e11_demonstration(wdir: str) -> None:
+    _section("Physical Experiment Demonstration (E11 Lab Recordings)")
+    st.markdown(
+        '<div class="rci-section-note">'
+        "Demonstration comparisons between physical robot recordings (from <code>lab_recordings/</code>) "
+        "and PyBullet simulation rollouts. Ink is extracted, scaled to calibrated dimensions, rotated upright "
+        "(reading left-to-right), and compared side-by-side with full-page zoom-out and deviation diff maps."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+    meta_path = Path("docs/figures/E11_demonstration/demonstrations.json")
+    if not meta_path.exists():
+        st.warning("Demonstration figures not found. Please run `python tools/generate_e11_demonstrations.py`.")
+        return
+    try:
+        demos = json.loads(meta_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        st.error(f"Failed to load demonstrations: {e}")
+        return
+
+    plan_keys = list(demos.keys())
+    plan_labels = [demos[k]["title"] for k in plan_keys]
+    selected_label = st.selectbox("Select Experiment Recording", plan_labels, key="e11_demo_select")
+    selected_key = plan_keys[plan_labels.index(selected_label)]
+    d = demos[selected_key]
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Scale Calibrated", f"{d['scale_factor']}x")
+    c2.metric("Rotation Fixed", f"{d['rotation_deg']}°")
+    c3.metric("Mean Trajectory Error", f"{d['mean_error_mm']} mm")
+    c4.metric("1 mm Coverage", f"{d['coverage_1mm']*100:.1f}%")
+    c5.metric("Writing Accuracy", f"{d['accuracy']*100:.0f}%")
+
+    st.info(f"**Analysis Finding:** {d['defect_note']}")
+
+    view_tab1, view_tab2, view_tab3, view_tab4 = st.tabs([
+        "🌟 Complete 4-Panel Overview",
+        "↔️ Clean Side-by-Side (Sim vs Real)",
+        "🎯 Physical Deviation & Diff Map",
+        "📷 Reference Lab Recording Photo",
+    ])
+    
+    with view_tab1:
+        st.image(d["figures"]["multi_panel_demo"], caption=f"4-Panel Demonstration: {d['title']}")
+        st.caption("Panel 1: Lab Recording Photo | Panel 2: Simulation Trajectory | Panel 3: Real Robot Drawing | Panel 4: Deviation & Diff Map")
+    with view_tab2:
+        st.image(d["figures"]["side_by_side"], caption=f"Side-by-Side Comparison (Separated, Matching Scale): {d['title']}")
+    with view_tab3:
+        st.image(d["figures"]["diff_map"], caption=f"Deviation & Diff Map (Color-Coded Error): {d['title']}")
+    with view_tab4:
+        st.image(d["figures"]["annotated_lab_photo"], caption=f"Annotated Lab Recording Photo: {d['photo_file']}")
+

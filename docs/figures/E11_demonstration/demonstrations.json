@@ -1,0 +1,86 @@
+{
+  "plan1_hello_baseline": {
+    "id": 1,
+    "name": "plan1_hello_baseline",
+    "title": "Plan 1: word_hello (writing_baseline)",
+    "target": "word_hello",
+    "policy": "writing_baseline",
+    "photo_file": "lab_recordings/plan1_hello_baseline.jpeg",
+    "defect_note": "Nominal baseline policy. Physical ink matches intended stroke structure with 60% accuracy due to single-stroke O closure gap.",
+    "scale_factor": 1.57,
+    "rotation_deg": -84.18,
+    "mean_error_mm": 1.742,
+    "max_error_mm": 77.303,
+    "coverage_1mm": 0.583,
+    "accuracy": 0.6,
+    "figures": {
+      "multi_panel_demo": "docs\\figures\\E11_demonstration\\plan1_hello_baseline_multi_panel_demo.png",
+      "side_by_side": "docs\\figures\\E11_demonstration\\plan1_hello_baseline_side_by_side.png",
+      "diff_map": "docs\\figures\\E11_demonstration\\plan1_hello_baseline_diff_map.png",
+      "annotated_lab_photo": "docs\\figures\\E11_demonstration\\plan1_hello_baseline_annotated_lab_photo.png"
+    }
+  },
+  "plan2_hello_candidate": {
+    "id": 2,
+    "name": "plan2_hello_candidate",
+    "title": "Plan 2: word_hello (writing_candidate - star defect)",
+    "target": "word_hello",
+    "policy": "writing_candidate",
+    "photo_file": "lab_recordings/plan2_hello_candidate.jpeg",
+    "defect_note": "Injected defect: internal star flourish inside letter 'H'. Clear red deviation (>2mm error) visible in star strokes.",
+    "scale_factor": 1.787,
+    "rotation_deg": -85.41,
+    "mean_error_mm": 1.087,
+    "max_error_mm": 56.015,
+    "coverage_1mm": 0.796,
+    "accuracy": 1.0,
+    "figures": {
+      "multi_panel_demo": "docs\\figures\\E11_demonstration\\plan2_hello_candidate_multi_panel_demo.png",
+      "side_by_side": "docs\\figures\\E11_demonstration\\plan2_hello_candidate_side_by_side.png",
+      "diff_map": "docs\\figures\\E11_demonstration\\plan2_hello_candidate_diff_map.png",
+      "annotated_lab_photo": "docs\\figures\\E11_demonstration\\plan2_hello_candidate_annotated_lab_photo.png"
+    }
+  },
+  "plan3_square_baseline": {
+    "id": 3,
+    "name": "plan3_square_baseline",
+    "title": "Plan 3: pattern_square (writing_baseline)",
+    "target": "pattern_square",
+    "policy": "writing_baseline",
+    "photo_file": "lab_recordings/plan3_square_baseline.jpeg",
+    "defect_note": "Nominal square baseline policy. 0.37 mm mean trajectory error with 97.1% coverage at 1mm.",
+    "scale_factor": 1.481,
+    "rotation_deg": 1.17,
+    "mean_error_mm": 0.37,
+    "max_error_mm": 1.858,
+    "coverage_1mm": 0.971,
+    "accuracy": 1.0,
+    "figures": {
+      "multi_panel_demo": "docs\\figures\\E11_demonstration\\plan3_square_baseline_multi_panel_demo.png",
+      "side_by_side": "docs\\figures\\E11_demonstration\\plan3_square_baseline_side_by_side.png",
+      "diff_map": "docs\\figures\\E11_demonstration\\plan3_square_baseline_diff_map.png",
+      "annotated_lab_photo": "docs\\figures\\E11_demonstration\\plan3_square_baseline_annotated_lab_photo.png"
+    }
+  },
+  "plan4_square_candidate": {
+    "id": 4,
+    "name": "plan4_square_candidate",
+    "title": "Plan 4: pattern_square (writing_candidate - corner defect)",
+    "target": "pattern_square",
+    "policy": "writing_candidate",
+    "photo_file": "lab_recordings/plan4_square_candidate.jpeg",
+    "defect_note": "Injected defect: chamfered / cut corners and top-right pen lift overshoot. Clear red deviation (>2mm error) at all 4 corners.",
+    "scale_factor": 1.426,
+    "rotation_deg": -1.51,
+    "mean_error_mm": 2.605,
+    "max_error_mm": 28.4,
+    "coverage_1mm": 0.528,
+    "accuracy": 1.0,
+    "figures": {
+      "multi_panel_demo": "docs\\figures\\E11_demonstration\\plan4_square_candidate_multi_panel_demo.png",
+      "side_by_side": "docs\\figures\\E11_demonstration\\plan4_square_candidate_side_by_side.png",
+      "diff_map": "docs\\figures\\E11_demonstration\\plan4_square_candidate_diff_map.png",
+      "annotated_lab_photo": "docs\\figures\\E11_demonstration\\plan4_square_candidate_annotated_lab_photo.png"
+    }
+  }
+}
