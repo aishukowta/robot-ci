@@ -23,7 +23,7 @@ from robot_ci.simulation.pybullet_sim import PyBulletSimulator
 from robot_ci.replay.engine import ReplayEngine
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from writing_section import render_section_d_writing  # noqa: E402
+from writing_section import render_section_d_writing, render_e11_demonstrations  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -1218,6 +1218,7 @@ def main():
             "🎥 Section B: Real-to-Simulation",
             "🩺 Section C: Evidence-Based Diagnosis",
             "✍️ Section D: Handwriting Robot",
+            "📸 E11 Lab Comparison (Physical Robot)",
         ],
         index=0,
         key="app_main_section",
@@ -1229,6 +1230,8 @@ def main():
         render_section_b_real_to_sim(results_dir)
     elif app_section == "✍️ Section D: Handwriting Robot":
         render_section_d_writing(results_dir)
+    elif app_section == "📸 E11 Lab Comparison (Physical Robot)":
+        render_e11_demonstrations(results_dir)
     else:
         render_section_c_diagnosis(results_dir)
 

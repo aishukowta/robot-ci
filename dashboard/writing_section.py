@@ -368,6 +368,7 @@ def _tab_upload(wdir: str) -> None:
     diag = st.session_state.get("wd_up_diag")
     m = rep["metrics"]
     _section("Result")
+    st.info("💡 **Clean Comparisons & Diff Maps Available:** Click the **'📸 E11 Lab Comparison (Zoomed-Out & Diff)'** tab above, or select **'📸 E11 Lab Comparison (Physical Robot)'** in the left sidebar to see clean side-by-side and difference maps!")
     if diag is not None:
         _status(diag.category.value in ("NO_REGRESSION_DETECTED",), f"DIAGNOSIS: {diag.category.value}")
         st.markdown(f"{diag.summary_explanation}  \n**Next step:** {diag.recommended_next_step}")
@@ -491,4 +492,10 @@ def _tab_e11_demonstration(wdir: str) -> None:
         st.image(d["figures"]["diff_map"], caption=f"Deviation & Diff Map (Color-Coded Error): {d['title']}")
     with view_tab4:
         st.image(d["figures"]["annotated_lab_photo"], caption=f"Annotated Lab Recording Photo: {d['photo_file']}")
+
+
+def render_e11_demonstrations(results_dir: str = "results") -> None:
+    wdir = str(Path(results_dir) / "writing")
+    _tab_e11_demonstration(wdir)
+
 
