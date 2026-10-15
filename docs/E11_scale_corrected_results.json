@@ -1,0 +1,211 @@
+{
+  "title": "E11 Scale- and Orientation-Corrected Physical Robot Re-analysis (Post-Hoc)",
+  "method_note": "This re-analysis applies a post-hoc similarity transform (uniform scale + rotation + translation) fit via trimmed ICP with Umeyama scaling across 8 starting orientations (0, 90, 180, 270 deg with/without mirror). The scale factor reflects the physical plotter's uncalibrated motor steps-per-mm, and the orientation correction resolves the 90-degree axis discrepancy between hardware plotter axes and page coordinates. The original rigid-only (rotation + translation only) results are preserved unchanged in docs/E11_physical_results.json.",
+  "plans": [
+    {
+      "plan_index": 1,
+      "plan_name": "plan1_hello_baseline",
+      "plan_hash": "4b69978ebb27afd1",
+      "target_id": "word_hello",
+      "policy_name": "writing_baseline",
+      "photo_file": "lab_recordings/plan1_hello_baseline.jpeg",
+      "transform": {
+        "initial_orientation_deg": 0,
+        "mirror_applied": false,
+        "scale_factor_uniform": 1.5699917210255407,
+        "rotation_deg": -84.18436477705082,
+        "translation_mm": [
+          88.2119844739159,
+          69.69693658016503
+        ],
+        "trimmed_mean_distance_mm": 0.9737151303787892,
+        "diagnostic_sx": 0.9000721500721499,
+        "diagnostic_sy": 12.618055555555555,
+        "diagnostic_sx_over_sy": 0.07133208013780384
+      },
+      "metrics_corrected": {
+        "trajectory_error_mean_mm": 1.7418696295653668,
+        "trajectory_error_max_mm": 77.30300840654468,
+        "path_coverage_1mm": 0.5825123152709359,
+        "path_coverage_2mm": 0.708128078817734,
+        "writing_accuracy": 0.6,
+        "misread_characters": [
+          {
+            "label": "L",
+            "predicted": "U",
+            "correct": false,
+            "score": 0.0576,
+            "margin": 0.007,
+            "runner_up": "D"
+          },
+          {
+            "label": "O",
+            "predicted": "0",
+            "correct": false,
+            "score": 0.0609,
+            "margin": 0.0101,
+            "runner_up": "3"
+          }
+        ],
+        "real_vs_sim_distance_symmetric_mm": 1.721085654590535
+      },
+      "metrics_sim_reference": {
+        "trajectory_error_mean_mm": 0.06773990513018355,
+        "trajectory_error_max_mm": 0.2624358459228371,
+        "path_coverage_1mm": 1.0,
+        "path_coverage_2mm": 1.0,
+        "writing_accuracy": 1.0
+      },
+      "diagnosis": {
+        "category": "BOTH_ISSUES_LIKELY",
+        "summary": "The candidate regressed in simulation AND the real robot's writing differs from the simulation."
+      },
+      "figures": {
+        "full_page": "docs/figures/E11_corrected/plan1_hello_baseline_full_page.png",
+        "aligned_overlay": "docs/figures/E11_corrected/plan1_hello_baseline_aligned_overlay.png",
+        "side_by_side": "docs/figures/E11_corrected/plan1_hello_baseline_side_by_side.png"
+      }
+    },
+    {
+      "plan_index": 2,
+      "plan_name": "plan2_hello_candidate",
+      "plan_hash": "9b7a63446cfded6b",
+      "target_id": "word_hello",
+      "policy_name": "writing_candidate",
+      "photo_file": "lab_recordings/plan2_hello_candidate.jpeg",
+      "transform": {
+        "initial_orientation_deg": 270,
+        "mirror_applied": false,
+        "scale_factor_uniform": 1.786630947504644,
+        "rotation_deg": -85.41098754380994,
+        "translation_mm": [
+          90.50901376335406,
+          70.56018803393533
+        ],
+        "trimmed_mean_distance_mm": 0.5713107753655553,
+        "diagnostic_sx": 1.807359307359307,
+        "diagnostic_sy": 7.402777777777778,
+        "diagnostic_sx_over_sy": 0.24414609780463437
+      },
+      "metrics_corrected": {
+        "trajectory_error_mean_mm": 1.0867735895155912,
+        "trajectory_error_max_mm": 56.01499865254372,
+        "path_coverage_1mm": 0.7955665024630542,
+        "path_coverage_2mm": 0.9593596059113301,
+        "writing_accuracy": 1.0,
+        "misread_characters": [],
+        "real_vs_sim_distance_symmetric_mm": 1.0047654432510935
+      },
+      "metrics_sim_reference": {
+        "trajectory_error_mean_mm": 0.6112008536550397,
+        "trajectory_error_max_mm": 2.2223997480310356,
+        "path_coverage_1mm": 0.8719211822660099,
+        "path_coverage_2mm": 0.9692118226600985,
+        "writing_accuracy": 1.0
+      },
+      "diagnosis": {
+        "category": "BOTH_ISSUES_LIKELY",
+        "summary": "The candidate regressed in simulation AND the real robot's writing differs from the simulation."
+      },
+      "figures": {
+        "full_page": "docs/figures/E11_corrected/plan2_hello_candidate_full_page.png",
+        "aligned_overlay": "docs/figures/E11_corrected/plan2_hello_candidate_aligned_overlay.png",
+        "side_by_side": "docs/figures/E11_corrected/plan2_hello_candidate_side_by_side.png"
+      }
+    },
+    {
+      "plan_index": 3,
+      "plan_name": "plan3_square_baseline",
+      "plan_hash": "f9d9e3adaa619f3e",
+      "target_id": "pattern_square",
+      "policy_name": "writing_baseline",
+      "photo_file": "lab_recordings/plan3_square_baseline.jpeg",
+      "transform": {
+        "initial_orientation_deg": 0,
+        "mirror_applied": false,
+        "scale_factor_uniform": 1.4813825174252864,
+        "rotation_deg": 1.1664015410826545,
+        "translation_mm": [
+          103.61785803860455,
+          89.20327565427667
+        ],
+        "trimmed_mean_distance_mm": 0.23227721208771793,
+        "diagnostic_sx": 1.50625,
+        "diagnostic_sy": 1.5458333333333334,
+        "diagnostic_sx_over_sy": 0.9743935309973046
+      },
+      "metrics_corrected": {
+        "trajectory_error_mean_mm": 0.36981831388879943,
+        "trajectory_error_max_mm": 1.85777547746893,
+        "path_coverage_1mm": 0.9708636836628513,
+        "path_coverage_2mm": 1.0,
+        "writing_accuracy": 1.0,
+        "misread_characters": [],
+        "real_vs_sim_distance_symmetric_mm": 0.3270880540120572
+      },
+      "metrics_sim_reference": {
+        "trajectory_error_mean_mm": 0.06709687029547716,
+        "trajectory_error_max_mm": 0.2845594181936525,
+        "path_coverage_1mm": 1.0,
+        "path_coverage_2mm": 1.0,
+        "writing_accuracy": 1.0
+      },
+      "diagnosis": {
+        "category": "POLICY_REGRESSION_LIKELY",
+        "summary": "The candidate regressed in simulation, and the real robot reproduces the simulated writing within tolerance."
+      },
+      "figures": {
+        "full_page": "docs/figures/E11_corrected/plan3_square_baseline_full_page.png",
+        "aligned_overlay": "docs/figures/E11_corrected/plan3_square_baseline_aligned_overlay.png",
+        "side_by_side": "docs/figures/E11_corrected/plan3_square_baseline_side_by_side.png"
+      }
+    },
+    {
+      "plan_index": 4,
+      "plan_name": "plan4_square_candidate",
+      "plan_hash": "2ab05ca5e98d11c6",
+      "target_id": "pattern_square",
+      "policy_name": "writing_candidate",
+      "photo_file": "lab_recordings/plan4_square_candidate.jpeg",
+      "transform": {
+        "initial_orientation_deg": 0,
+        "mirror_applied": false,
+        "scale_factor_uniform": 1.4264808565315608,
+        "rotation_deg": -1.5108930806051668,
+        "translation_mm": [
+          115.88219272586663,
+          83.31681879979372
+        ],
+        "trimmed_mean_distance_mm": 1.4739778973760558,
+        "diagnostic_sx": 1.7666666666666666,
+        "diagnostic_sy": 2.247916666666667,
+        "diagnostic_sx_over_sy": 0.7859128822984244
+      },
+      "metrics_corrected": {
+        "trajectory_error_mean_mm": 2.604946614492432,
+        "trajectory_error_max_mm": 28.400188518337103,
+        "path_coverage_1mm": 0.5275754422476587,
+        "path_coverage_2mm": 0.6305931321540063,
+        "writing_accuracy": 1.0,
+        "misread_characters": [],
+        "real_vs_sim_distance_symmetric_mm": 3.0182228469767622
+      },
+      "metrics_sim_reference": {
+        "trajectory_error_mean_mm": 1.903372573672059,
+        "trajectory_error_max_mm": 7.854490633403035,
+        "path_coverage_1mm": 0.5150884495317378,
+        "path_coverage_2mm": 0.5889698231009365,
+        "writing_accuracy": 0.0
+      },
+      "diagnosis": {
+        "category": "BOTH_ISSUES_LIKELY",
+        "summary": "The candidate regressed in simulation AND the real robot's writing differs from the simulation."
+      },
+      "figures": {
+        "full_page": "docs/figures/E11_corrected/plan4_square_candidate_full_page.png",
+        "aligned_overlay": "docs/figures/E11_corrected/plan4_square_candidate_aligned_overlay.png",
+        "side_by_side": "docs/figures/E11_corrected/plan4_square_candidate_side_by_side.png"
+      }
+    }
+  ]
+}
